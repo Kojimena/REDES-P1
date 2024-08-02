@@ -1,5 +1,8 @@
 const { client, xml } = require('@xmpp/client');
 const debug = require('@xmpp/debug');
+const stanzas = require('./stanzas');
+
+
 class XmppService {
   constructor(username, password) {
 
@@ -7,10 +10,11 @@ class XmppService {
 
     this.username = username;
     this.password = password;
+    this.roster = new Set();
 
     this.xmpp = client({
-      service: 'xmpp://alumchat.lol:5222',
-      domain: 'alumchat.lol',
+      service: 'wss://tigase.im:5291/xmpp-websocket',
+      domain: 'tigase.im',
       resource: 'web',
       username: this.username,
       password: this.password,
@@ -28,17 +32,24 @@ class XmppService {
 
     this.xmpp.on('offline', () => {
       console.log('⏹ Offline');
+      setTimeout(() => { () => this.connect(this.username, this.password) }, 5000);
     });
 
     this.xmpp.on('online', jid => {
-      console.log('▶ Online as', jid.toString());
+      console.log('▶ Online as', jid.toString());  
+      const presence = stanzas.presence('chat', 'Online');
+      this.xmpp.send(presence);
     });
 
     this.xmpp.on('stanza', async stanza => {
-      if (stanza.is('message')) {
-        console.log('📩 Message:', stanza.toString());
+      if (stanza.is('message') && stanza.getChild('body')) {
+        const body = stanza.getChild('body').text();
+        const from = stanza.attrs.from;
+        console.log('📩 Message from', from, ':', body);
       }
     });
+    
+
   }
 
   async connect(jid, password) {
@@ -51,7 +62,7 @@ class XmppService {
     } catch (err) {
       console.error('❌ Connection error:', err.toString());
     }
-  }
+  }    
 
   async register(username, password) {
     try {
@@ -66,6 +77,23 @@ class XmppService {
       console.log('Registration request sent');
     } catch (err) {
       console.error('❌ Registration error:', err.toString());
+    }
+  }
+
+  
+  /**
+   * Send message to a user
+   * @param {any} to
+   * @param {any} message
+   * @returns {any}
+   */
+  async sendMessage(to, message) {
+    try {
+      const stanza = xml('message', { to, type: 'chat' }, xml('body', {}, message));
+      await this.xmpp.send(stanza);
+      console.log('Message sent');
+    } catch (err) {
+      console.error('❌ Message error:', err.toString());
     }
   }
 

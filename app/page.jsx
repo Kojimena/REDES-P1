@@ -2,20 +2,35 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@mui/material'
-import { connect } from '@/services/xmppService'
+import XmppService from '@/services/xmppService'
 
 export default function Home() {
-  const [jid, setJid] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
 
   const handleLogin = async () => {
+    const xmppService = new XmppService(username, password);
     try {
-      await connect(jid, password, { rejectUnauthorized: false });
-    } catch (error) {
-      console.error(error);
+      await xmppService.connect(username, password);
+      if (xmppService.xmpp.status === 'online') {
+        handleRememberMe();
+        console.log('✅ Connected');
+        router.push('/chat');
+      }
+    } catch (err) {
+      console.error('❌ Error:', err.toString());
     }
-  };
+  }
+
+  /**
+   * Save username and password in local storage
+   * @returns {any}
+   */
+  const handleRememberMe = () => {
+    localStorage.setItem('username', username);
+    localStorage.setItem('password', password);
+  }
 
 
   return (
@@ -50,13 +65,26 @@ export default function Home() {
                 <label className="label">
                   <span className="label-text text-black">Email</span>
                 </label>
-                <input type="email" placeholder="email" className="input input-bordered" required  onChange={(e) => setJid(e.target.value)} />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Username"
+                className="input input-bordered" 
+                  required  
+                />
               </div>
               <div className="form-control">
                 <label className="label">
                   <span className="label-text text-black" onChange={(e) => setPassword(e.target.value)}>Password</span>
                 </label>
-                <input type="password" placeholder="password" className="input input-bordered" required />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="input input-bordered"
+                />
                 <label className="label">
                   <a href="/signup" className="label-text-alt link link-hover text-black">Don&apos;t have an account?</a>
                 </label>

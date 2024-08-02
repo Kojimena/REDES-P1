@@ -1,16 +1,22 @@
 "use client";
-import React, {useState} from 'react'
+import React, {use, useEffect, useState} from 'react'
 import { IoIosArrowDropdownCircle } from "react-icons/io"
 import { RiLogoutCircleRLine } from "react-icons/ri"
+import XmppService from '@/services/xmppService';
 
 const Chat = () => {
     const [bgColor, setBgColor] = useState('#2f2f2f')
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [xmpp, setXmpp] = useState(null);
+
     
     const handleColorChange = (event) => {
         setBgColor(event.target.value)
     }
+
 
     const direct_messages = [
         {
@@ -83,8 +89,20 @@ const Chat = () => {
     const triplify_array = (arr) => {
         return Array(5).fill(arr).flat()
     }
+    
 
-    const messages = triplify_array(direct_messages)
+    useEffect(() => {
+        setUsername(localStorage.getItem('username'));
+        setPassword(localStorage.getItem('password'));
+    }, [])
+
+    useEffect(() => {
+        if (username && password) {
+            const xmppService = new XmppService(username, password);
+            setXmpp(xmppService);
+        }
+        
+    }, [])
     
     return (
         <div className='page bg-white md:p-10 h-screen relative'>
