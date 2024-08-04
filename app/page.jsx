@@ -3,23 +3,22 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@mui/material'
 import XmppService from '@/services/xmppService'
+import { useXmpp } from '@/contexts/xmppContext'
+
 
 export default function Home() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { login } = useXmpp();
 
   const handleLogin = async () => {
-    const xmppService = new XmppService(username, password);
     try {
-      await xmppService.connect(username, password);
-      if (xmppService.xmpp.status === 'online') {
-        handleRememberMe();
-        console.log('✅ Connected');
-        router.push('/chat');
-      }
-    } catch (err) {
-      console.error('❌ Error:', err.toString());
+      login(username, password);
+      handleRememberMe();
+      router.push('/chat');
+    } catch (error) {
+      console.error('Error logging in:', error);
     }
   }
 
@@ -34,6 +33,7 @@ export default function Home() {
 
 
   return (
+
     <main className="page bg-white">
       <div className="hero bg-white min-h-screen relative">
         <div className="hero-content flex-col">

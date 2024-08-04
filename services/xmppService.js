@@ -41,6 +41,7 @@ class XmppService extends EventEmitter{
       await this.xmpp.send(xml('presence'));  // initial presence
       await new Promise(resolve => setTimeout(resolve, 1000));  
       this.getRoster(jid);  // fetch roster 
+      this.emit('online');
     });
 
     this.xmpp.on('stanza', async (stanza) => {
@@ -49,12 +50,14 @@ class XmppService extends EventEmitter{
         const from = stanza.attrs.from;
         console.log('📩 Message from', from, ':', body);
       } else if (stanza.is('iq') && stanza.attrs.type === 'result') {
-        console.log('Roster received:', stanza.toString());
+        console.log('📩 IQ result:', stanza.toString());
+        this.handleRoster(stanza);
       }
     });
     
 
   }
+
 
 
   async connect(jid, password) {
@@ -83,6 +86,26 @@ class XmppService extends EventEmitter{
     } catch (err) {
       console.error('❌ Registration error:', err.toString());
     }
+  }
+
+  handleRoster(stanza) {
+      /*
+        Handler para añadir contactos a roster.
+        Función utilizada en getRoster.
+      */
+      const stanzaId = stanza.attrs.id;
+      if (stanzaId === 'roster_1') {
+        const query = stanza.getChild('query');
+        if (query) {
+          query.getChildren('item').forEach(item => {
+            const jid = item.attrs.jid;
+            this.roster.add(jid);
+          });
+        }
+      }
+    console.log('🐹 Roster handle:', this.roster)
+    this.emit('rosterUpdated', Array.from(this.roster)); // Send updated roster in an array
+
   }
 
 

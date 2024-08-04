@@ -1,17 +1,18 @@
 "use client";
-import React, {use, useEffect, useState} from 'react'
+import React, { useEffect, useState} from 'react'
 import { IoIosArrowDropdownCircle } from "react-icons/io"
 import { RiLogoutCircleRLine } from "react-icons/ri"
-import XmppService from '@/services/xmppService';
+import XmppService from '@/services/xmppService'
+import { useXmpp } from '@/contexts/xmppContext'
 
 const Chat = () => {
     const [bgColor, setBgColor] = useState('#2f2f2f')
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
-    const [xmpp, setXmpp] = useState(null);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [roster, setRoster] = useState([]);
+    const { roster, login } = useXmpp();
+
 
     
     const handleColorChange = (event) => {
@@ -86,41 +87,28 @@ const Chat = () => {
             ]
         }
     ]
-
-    const triplify_array = (arr) => {
-        return Array(5).fill(arr).flat()
-    }
     
 
     useEffect(() => {
-        setUsername(localStorage.getItem('username'));
-        setPassword(localStorage.getItem('password'));
-        const xmppService = new XmppService(username, password);
-        setXmpp(xmppService);
-
-    }, [])
-
-    useEffect(() => {
-        if (xmpp) {
-            const handleRoster = (rosterData) => {
-                console.log("Roster data", rosterData);
-                setRoster(convertRoster(rosterData));
-            };
-            xmpp.on('roster', handleRoster);
-            return () => xmpp.off('roster', handleRoster);
+        const user = localStorage.getItem('username');
+        const pass = localStorage.getItem('password');
+        if (user && pass) {
+            setUsername(user);
+            setPassword(pass);
         }
-    }, [xmpp, username]);
+    }, []);    
 
-    const convertRoster = (rosterData) => {
-        console.log("Roster data", rosterData);
-        return rosterData; // Implementa la conversión como sea necesaria
-    };
 
     return (
         <div className='page bg-white md:p-10 h-screen relative'>
-            {
-                console.log(roster)
-            }
+            {console.log("username", username)}
+            <ul>
+                {roster.map(contact => (
+                    <li key={contact}>
+                        {contact}
+                    </li>
+                ))}
+            </ul>
             <input 
                 type="color" 
                 value={bgColor} 
