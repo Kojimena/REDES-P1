@@ -4,6 +4,8 @@ import { IoIosArrowDropdownCircle } from "react-icons/io"
 import { RiLogoutCircleRLine } from "react-icons/ri"
 import XmppService from '@/services/xmppService'
 import { useXmpp } from '@/contexts/xmppContext'
+import { MdCancel } from "react-icons/md";
+
 
 const Chat = () => {
     const [bgColor, setBgColor] = useState('#2f2f2f')
@@ -11,7 +13,11 @@ const Chat = () => {
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const { roster, login } = useXmpp();
+    const { roster, login, xmpp } = useXmpp();
+
+    const [toMessage, setToMessage] = useState('');
+    const [messagetoSend, setMessageToSend] = useState('');
+    const [showPopupMessage, setShowPopupMessage] = useState(false);
 
 
     
@@ -19,75 +25,22 @@ const Chat = () => {
         setBgColor(event.target.value)
     }
 
+    /*Mensajes privados*/
+    const onChangeMessage = (event) => {
+        setMessageToSend(event.target.value);
+    }
 
-    const direct_messages = [
-        {
-            name: 'John Doe',
-            status: 'online',
-            messages: [
-                {
-                    from: 'John Doe',
-                    message: 'Hello, how are you?',
-                    timestamp: '10:00 AM'
-                },
-                {
-                    from: 'Me',
-                    message: 'I am good, thanks for asking',
-                    timestamp: '10:01 AM'
-                }
-            ]
-        },
-        {
-            name: 'Paul Smith',
-            status: 'offline',
-            messages: [
-                {
-                    from: 'Paul Smith',
-                    message: 'Hey, what are you doing?',
-                    timestamp: '10:00 AM'
-                },
-                {
-                    from: 'Me',
-                    message: 'Nothing much, just chilling',
-                    timestamp: '10:01 AM'
-                }
-            ]
-        }
-    ]
+    const handleShowPopupMessage = () => {
+        setShowPopupMessage(!showPopupMessage)
+    }
 
-    const channel_messages = [
-        {
-            name: 'General',
-            messages: [
-                {
-                    from: 'John Doe',
-                    message: 'Hello, how are you?',
-                    timestamp: '10:00 AM'
-                },
-                {
-                    from: 'Me',
-                    message: 'I am good, thanks for asking',
-                    timestamp: '10:01 AM'
-                }
-            ]
-        },
-        {
-            name: 'Random',
-            messages: [
-                {
-                    from: 'Paul Smith',
-                    message: 'Hey, what are you doing?',
-                    timestamp: '10:00 AM'
-                },
-                {
-                    from: 'Me',
-                    message: 'Nothing much, just chilling',
-                    timestamp: '10:01 AM'
-                }
-            ]
-        }
-    ]
-    
+    const handleSendMessage = () => {
+        xmpp.sendMessage(toMessage, messagetoSend);
+    }
+
+
+
+
 
     useEffect(() => {
         const user = localStorage.getItem('username');
@@ -96,8 +49,9 @@ const Chat = () => {
             setUsername(user);
             setPassword(pass);
         }
-    }, []);    
 
+    }, []); 
+    
 
     return (
         <div className='page bg-white md:p-10 h-screen relative'>
@@ -120,12 +74,17 @@ const Chat = () => {
             </div>
             <div className="mockup-code text-white w-full h-full overflow-y-auto flex" style={{backgroundColor: bgColor}}>
                 <div className='bg-transparent text-black rounded-md m-4 w-1/4 shadow-lg overflow-y-scroll'>
-                    <span className='text-xl p-4 font-poppins text-white flex justify-start items-center font-semibold'>
+                    <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Direct Messages
-                        <IoIosArrowDropdownCircle 
-                            className='text-white ml-2 cursor-pointer'
-                            onClick={() => setShowPrivateMessages(!showPrivateMessages)}
-                        />
+                        <div className='gap-4 flex justify-center items-center'>
+                            <IoIosArrowDropdownCircle 
+                                className='text-white ml-2 cursor-pointer'
+                                onClick={() => setShowPrivateMessages(!showPrivateMessages)}
+                            />
+                            <button onClick={handleShowPopupMessage}>
+                                +
+                            </button>
+                        </div>
                     </span>
                     {
                         showPrivateMessages && messages.map(contact => (
@@ -138,12 +97,17 @@ const Chat = () => {
                             </div>
                         ))
                     }
-                    <span className='text-xl p-4 font-poppins text-white flex justify-start items-center font-semibold'>
+                    <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Channels
-                        <IoIosArrowDropdownCircle 
-                            className='text-white ml-2 cursor-pointer'
-                            onClick={() => setShowChannelMessages(!showChannelMessages)}
-                        />
+                        <div className='gap-4 flex justify-center items-center'>
+                            <IoIosArrowDropdownCircle 
+                                className='text-white ml-2 cursor-pointer'
+                                onClick={() => setShowChannelMessages(!showChannelMessages)}
+                            />
+                            <button>
+                                +
+                            </button>
+                        </div>
                     </span>
                     {
                         showChannelMessages && channel_messages.map(channel => (
@@ -159,6 +123,34 @@ const Chat = () => {
                 <div className='glassmorphism shadow-2xl text-black p-10 rounded-md m-4 w-3/4'>
                 </div>
             </div>
+            {
+                showPopupMessage && (
+                    <div className='fixed inset-0 w-80 m-4  bg-white p-4 rounded-md shadow-lg'>
+                        <span className='text-md p-4 font-poppins text-black flex justify-center items-center font-semibold'>
+                            Send Message
+                        </span>
+                        <button  className='absolute top-0 right-0' onClick={handleShowPopupMessage}>
+                            <MdCancel  className='text-black text-2xl cursor-pointer' />
+                        </button>
+                        <input 
+                            type='text' 
+                            placeholder='To' 
+                            value={toMessage} 
+                            onChange={(e) => setToMessage(e.target.value)}
+                            className='w-full p-2 rounded-md bg-gray-800 my-4'
+                        />
+                        <textarea 
+                            placeholder='Message' 
+                            className='w-full p-2 rounded-md border bg-gray-800 border-gray-300 my-2'
+                            value={messagetoSend}
+                            onChange={onChangeMessage}
+                        />
+                        <button className='bg-black text-white p-2 rounded-md mt-2 w-full' onClick={handleSendMessage}>
+                            Send
+                        </button>
+                    </div>
+                )
+            }
         </div>
     )
 }

@@ -1,14 +1,16 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, use, useContext, useState } from 'react';
 import XmppService from '@/services/xmppService';
 
 const XmppContext = createContext({
     xmpp: null,
     roster: [],
-    login: () => {} 
+    login: () => {} ,
+    alreadyLogged: false
 });
 
 export const XmppProvider = ({ children }) => {
     const [xmpp, setXmpp] = useState(null);
+    const [alreadyLogged, setAlreadyLogged] = useState(false);
     const [roster, setRoster] = useState([]);
 
     const login = (username, password) => {
@@ -21,7 +23,10 @@ export const XmppProvider = ({ children }) => {
         });
         setXmpp(service);
         service.connect(username, password);
+        setAlreadyLogged(true);
+
     };
+
 
     return (
         <XmppContext.Provider value={{ xmpp, roster, login }}>
