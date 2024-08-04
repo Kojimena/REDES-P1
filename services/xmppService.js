@@ -1,10 +1,11 @@
 const { client, xml } = require('@xmpp/client');
 const debug = require('@xmpp/debug');
-const stanzas = require('./stanzas');
+const EventEmitter = require('events');  // Asegúrate de que EventEmitter esté importado correctamente
 
 
-class XmppService {
+class XmppService extends EventEmitter{
   constructor(username, password) {
+    super();
 
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -35,22 +36,26 @@ class XmppService {
       setTimeout(() => { () => this.connect(this.username, this.password) }, 5000);
     });
 
-    this.xmpp.on('online', jid => {
-      console.log('▶ Online as', jid.toString());  
-      const presence = stanzas.presence('chat', 'Online');
-      this.xmpp.send(presence);
+    this.xmpp.on('online', async (jid) => {
+      console.log('▶ Online as', jid.toString());
+      await this.xmpp.send(xml('presence'));  // initial presence
+      await new Promise(resolve => setTimeout(resolve, 1000));  
+      this.getRoster(jid);  // fetch roster 
     });
 
-    this.xmpp.on('stanza', async stanza => {
+    this.xmpp.on('stanza', async (stanza) => {
       if (stanza.is('message') && stanza.getChild('body')) {
         const body = stanza.getChild('body').text();
         const from = stanza.attrs.from;
         console.log('📩 Message from', from, ':', body);
+      } else if (stanza.is('iq') && stanza.attrs.type === 'result') {
+        console.log('Roster received:', stanza.toString());
       }
     });
     
 
   }
+
 
   async connect(jid, password) {
     this.xmpp.options.username = jid.split('@')[0];
@@ -80,6 +85,38 @@ class XmppService {
     }
   }
 
+
+  /**
+   *  Request roster
+   * @param jid
+   * @returns  {any}
+   */
+  rosterRequest(jid) {
+    return xml(
+      'iq', 
+      { type: 'get', 
+        to : jid,
+        id: 'roster_1' },
+      xml('query', { xmlns: 'jabber:iq:roster' })
+    );
+  }
+
+  /**
+   * Fetch roster
+   * @param {any} jid
+   * @returns {any}
+   */
+  async getRoster(jid) {
+    try {
+      const rosterStanza = this.rosterRequest(jid);
+      await this.xmpp.send(rosterStanza);
+      console.log('🐹 Roster request sent');
+      //wait 5 seconds
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (err) {
+      console.error('❌ Roster error:', err.toString());
+    }
+  }
   
   /**
    * Send message to a user

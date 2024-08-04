@@ -13,16 +13,17 @@ const testXmppService = async () => {
     await xmppService.connect(jid, password, { rejectUnauthorized: false });
     console.log('✅ Conexión exitosa');
 
-    /* await xmppService.register(newJid, newPassword);
-    console.log('✅ Registro exitoso'); */
-
-    //send message to myself
     await xmppService.sendMessage(jid, 'holi');
+    await xmppService.getRoster(jid);
 
-    await xmppService.logout();
-    console.log('✅ Cierre de sesión exitoso');
+    //wait 10 seconds
+    console.log('✅ Operaciones completadas');
   } catch (err) {
     console.error('❌ Error en la prueba:', err.toString());
+  } finally {
+    // Llamar a una función de limpieza si existe, o cerrar cualquier recurso abierto aquí
+    console.log('⏹️ Proceso terminado');
+    process.exit();
   }
 };
 

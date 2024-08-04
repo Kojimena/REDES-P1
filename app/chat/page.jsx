@@ -8,9 +8,10 @@ const Chat = () => {
     const [bgColor, setBgColor] = useState('#2f2f2f')
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
+    const [xmpp, setXmpp] = useState(null);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [xmpp, setXmpp] = useState(null);
+    const [roster, setRoster] = useState([]);
 
     
     const handleColorChange = (event) => {
@@ -94,18 +95,32 @@ const Chat = () => {
     useEffect(() => {
         setUsername(localStorage.getItem('username'));
         setPassword(localStorage.getItem('password'));
+        const xmppService = new XmppService(username, password);
+        setXmpp(xmppService);
+
     }, [])
 
     useEffect(() => {
-        if (username && password) {
-            const xmppService = new XmppService(username, password);
-            setXmpp(xmppService);
+        if (xmpp) {
+            const handleRoster = (rosterData) => {
+                console.log("Roster data", rosterData);
+                setRoster(convertRoster(rosterData));
+            };
+            xmpp.on('roster', handleRoster);
+            return () => xmpp.off('roster', handleRoster);
         }
-        
-    }, [])
-    
+    }, [xmpp, username]);
+
+    const convertRoster = (rosterData) => {
+        console.log("Roster data", rosterData);
+        return rosterData; // Implementa la conversión como sea necesaria
+    };
+
     return (
         <div className='page bg-white md:p-10 h-screen relative'>
+            {
+                console.log(roster)
+            }
             <input 
                 type="color" 
                 value={bgColor} 
