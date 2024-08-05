@@ -2,22 +2,45 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, TextField } from '@mui/material'
-import { register } from '@/services/xmppService'
+import { useXmpp } from '@/contexts/xmppContext'
+
 
 const Signup = () => {
   const [jid, setJid] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const [success, setSuccess] = useState(false);
+
+  const { register } = useXmpp();
 
   const handleRegister = async () => {
     try {
-      await register(jid, password);
-      console.log('Registered successfully');
-      router.push('/'); 
-    } catch (error) {
-      console.error('Registration failed:', error);
+      await register(jid.split('@')[0], password);
+      handleRememberMe();
+      setSuccess(true);
     }
-  };
+    catch (err) {
+      console.error('❌ Error:', err.toString());
+    }
+  }
+
+  /**
+   * Save username and password in local storage
+   * @returns {any}
+   */
+  const handleRememberMe = () => {
+    localStorage.setItem('username', jid.split('@')[0]);
+    localStorage.setItem('password', password);
+  }
+
+  const onChangeJid = (event) => {
+    setJid(event.target.value);
+  }
+
+  const onChangePassword = (event) => {
+    setPassword(event.target.value);
+  }
+
 
   return (
     <div className="hero bg-white min-h-screen relative">
@@ -50,13 +73,13 @@ const Signup = () => {
                <label className="label">
                   <span className="label-text text-black">Email</span>
                 </label>
-                <input type="email" placeholder="email" className="input input-bordered" required  onChange={(e) => setJid(e.target.value)} />
+                <input type="email" placeholder="email" className="input input-bordered" required  onChange={onChangeJid} />
             </div>
             <div className="form-control">
               <label className="label">
                 <span className="label-text text-black">Password</span>
               </label>
-              <input type="password" placeholder="password" className="input input-bordered" required onChange={(e) => setPassword(e.target.value)} />
+              <input type="password" placeholder="password" className="input input-bordered" required onChange={onChangePassword} />
               <label className="label">
                 <a href="/" className="label-text-alt link link-hover text-black">Already have an account?</a>
               </label>
@@ -73,6 +96,27 @@ const Signup = () => {
           </form>
         </div>
       </div>
+      {
+        success && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+            <div className="card bg-white w-full max-w-sm shadow-2xl">
+              <div className="card-body">
+                <h1 className="text-2xl font-bold text-black">Success!</h1>
+                <p className="py-6">
+                  Your account has been created successfully.
+                </p>
+                <Button
+                  variant="contained"
+                  color="bg-green-500"
+                  onClick={() => router.push('/')}
+                >
+                  Login
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      }
     </div>
   );
 };

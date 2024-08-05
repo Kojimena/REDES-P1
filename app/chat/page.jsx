@@ -2,7 +2,6 @@
 import React, { useEffect, useState} from 'react'
 import { IoIosArrowDropdownCircle } from "react-icons/io"
 import { RiLogoutCircleRLine } from "react-icons/ri"
-import XmppService from '@/services/xmppService'
 import { useXmpp } from '@/contexts/xmppContext'
 import { MdCancel } from "react-icons/md";
 
@@ -11,9 +10,10 @@ const Chat = () => {
     const [bgColor, setBgColor] = useState('#2f2f2f')
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
+    const [showInvitations, setShowInvitations] = useState(false)
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const { roster, login, xmpp } = useXmpp();
+    const { roster, login, xmpp, invitations } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -55,14 +55,6 @@ const Chat = () => {
 
     return (
         <div className='page bg-white md:p-10 h-screen relative'>
-            {console.log("username", username)}
-            <ul>
-                {roster.map(contact => (
-                    <li key={contact}>
-                        {contact}
-                    </li>
-                ))}
-            </ul>
             <input 
                 type="color" 
                 value={bgColor} 
@@ -72,8 +64,26 @@ const Chat = () => {
             <div className='absolute top-0 right-0 m-4'>
                 <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' />
             </div>
-            <div className="mockup-code text-white w-full h-full overflow-y-auto flex" style={{backgroundColor: bgColor}}>
-                <div className='bg-transparent text-black rounded-md m-4 w-1/4 shadow-lg overflow-y-scroll'>
+            <div className="mockup-code text-white w-full h-full overflow-y-auto flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
+                <div className='bg-transparent text-black rounded-md m-4 md:w-1/4 shadow-lg overflow-y-scroll'>
+                <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
+                        Invitations
+                        <div className='gap-4 flex justify-center items-center'>
+                            <IoIosArrowDropdownCircle 
+                                className='text-white ml-2 cursor-pointer'
+                                onClick={() => setShowInvitations(!showInvitations)}
+                            />
+                        </div>
+                    </span>
+                    {
+                       showInvitations && invitations.map(invite => (
+                            <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={invite}>
+                                <div className='flex items-center'>
+                                    <div className='ml-2'>{invite}</div>
+                                </div>
+                            </div>
+                        ))
+                    }
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Direct Messages
                         <div className='gap-4 flex justify-center items-center'>
@@ -120,7 +130,7 @@ const Chat = () => {
                         ))
                     }
                 </div>
-                <div className='glassmorphism shadow-2xl text-black p-10 rounded-md m-4 w-3/4'>
+                <div className='glassmorphism shadow-2xl text-black p-10 rounded-md m-4 md:w-3/4 h-full md:h-[98%] md:m-4 md:p-0'>
                 </div>
             </div>
             {

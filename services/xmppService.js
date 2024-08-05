@@ -14,8 +14,8 @@ class XmppService extends EventEmitter{
     this.roster = new Set();
 
     this.xmpp = client({
-      service: 'wss://tigase.im:5291/xmpp-websocket',
-      domain: 'tigase.im',
+      service: 'ws://alumchat.lol:7070/ws',
+      domain: 'alumchat.lol',
       resource: 'web',
       username: this.username,
       password: this.password,
@@ -38,9 +38,9 @@ class XmppService extends EventEmitter{
 
     this.xmpp.on('online', async (jid) => {
       console.log('▶ Online as', jid.toString());
-      await this.xmpp.send(xml('presence'));  // initial presence
+      await this.xmpp.send(xml('presence')); 
       await new Promise(resolve => setTimeout(resolve, 1000));  
-      this.getRoster(jid);  // fetch roster 
+      this.getRoster(jid);
       this.emit('online');
     });
 
@@ -52,6 +52,14 @@ class XmppService extends EventEmitter{
       } else if (stanza.is('iq') && stanza.attrs.type === 'result') {
         console.log('📩 IQ result:', stanza.toString());
         this.handleRoster(stanza);
+      } else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query') && stanza.getChild('query').attrs.xmlns === 'jabber:iq:roster') {
+        console.log('📩 Roster:', stanza.toString());
+      } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
+            const from = stanza.attrs.from;
+            console.log('📩 Subscription request from:', from);
+            this.emit('invitationReceived', from);
+      } else {
+        console.log('📩 Stanza:', stanza.toString());
       }
     });
     
@@ -72,20 +80,23 @@ class XmppService extends EventEmitter{
     }
   }    
 
-  async register(username, password) {
-    try {
-      const domain = 'alumchat.lol';
-      const registration = xml('iq', { type: 'set', to: domain },
-        xml('query', { xmlns: 'jabber:iq:register' },
-          xml('username', {}, username),
-          xml('password', {}, password)
-        )
-      );
-      await this.xmpp.send(registration);
-      console.log('Registration request sent');
-    } catch (err) {
-      console.error('❌ Registration error:', err.toString());
-    }
+  async register(jid, password) {
+      try {
+        const stanza = xml(
+          'iq',
+          { type: 'set', id: 'register_1' },
+          xml(
+            'query',
+            { xmlns: 'jabber:iq:register' },
+            xml('username', {}, jid),
+            xml('password', {}, password)
+          )
+        );
+        await this.xmpp.send(stanza);
+        console.log('📩 Register sent');
+      } catch (err) {
+        console.error('❌ Register error:', err.toString());
+      }
   }
 
   handleRoster(stanza) {

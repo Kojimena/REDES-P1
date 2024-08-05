@@ -1,9 +1,9 @@
 const XmppService = require('./xmppService.js');
 
-const jid = 'kojimena@tigase.im';
+const jid = 'her21002';
 const password = 'nutella21';
 
-const newJid = 'her10';
+const newJid = 'test1001';
 const newPassword = 'nutella10';
 
 const testXmppService = async () => {
@@ -13,8 +13,10 @@ const testXmppService = async () => {
     await xmppService.connect(jid, password, { rejectUnauthorized: false });
     console.log('✅ Conexión exitosa');
 
-    await xmppService.sendMessage(jid, 'holi');
+    await xmppService.sendMessage('her21199@alumchat.lol', 'Hola, soy her21002');
     await xmppService.getRoster(jid);
+
+    await xmppService.register(newJid, newPassword);
 
     //wait 10 seconds
     console.log('✅ Operaciones completadas');

@@ -2,7 +2,6 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@mui/material'
-import XmppService from '@/services/xmppService'
 import { useXmpp } from '@/contexts/xmppContext'
 
 
@@ -14,7 +13,7 @@ export default function Home() {
 
   const handleLogin = async () => {
     try {
-      login(username, password);
+      login(username.split('@')[0], password);
       handleRememberMe();
       router.push('/chat');
     } catch (error) {
@@ -22,12 +21,16 @@ export default function Home() {
     }
   }
 
+  const handleUsername = (e) => {
+    setUsername(e.target.value);
+  }
+
   /**
    * Save username and password in local storage
    * @returns {any}
    */
   const handleRememberMe = () => {
-    localStorage.setItem('username', username);
+    localStorage.setItem('username', username.split('@')[0]);
     localStorage.setItem('password', password);
   }
 
@@ -68,7 +71,7 @@ export default function Home() {
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={handleUsername}
                   placeholder="Username"
                 className="input input-bordered" 
                   required  
@@ -95,7 +98,7 @@ export default function Home() {
                 color="primary"
                 onClick={handleLogin}
               >
-                Sign Up
+                Login
               </Button>
               </div>
             </form>
