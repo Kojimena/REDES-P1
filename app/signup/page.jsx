@@ -105,13 +105,7 @@ const Signup = () => {
                 <p className="py-6">
                   Your account has been created successfully.
                 </p>
-                <Button
-                  variant="contained"
-                  color="bg-green-500"
-                  onClick={() => router.push('/')}
-                >
-                  Login
-                </Button>
+                <a href="/" className="btn btn-primary">Login</a>
               </div>
             </div>
           </div>
