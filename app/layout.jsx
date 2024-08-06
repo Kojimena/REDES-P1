@@ -8,7 +8,6 @@ const RootLayout = ({children}) => {
   return (
     <html lang="es">
         <head>
-         
         </head>
         <body>
             <main className='app'>

@@ -1,9 +1,12 @@
 "use client";
-import React, { useEffect, useState} from 'react'
+import React, { use, useEffect, useState} from 'react'
 import { IoIosArrowDropdownCircle } from "react-icons/io"
 import { RiLogoutCircleRLine } from "react-icons/ri"
 import { useXmpp } from '@/contexts/xmppContext'
 import { MdCancel } from "react-icons/md";
+import { useRouter } from 'next/navigation'
+import ChatBubble from '@/components/ChatBubble/ChatBubble'
+import { FiSend } from "react-icons/fi"
 
 
 const Chat = () => {
@@ -11,13 +14,46 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const { roster, login, xmpp, invitations } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
+    const [privateMessage , setPrivateMessage] = useState('');
+
+
     const [showPopupMessage, setShowPopupMessage] = useState(false);
+    const rout = useRouter();
+
+    const [conversations, setConversations] = useState({});
+    const [selectedContact, setSelectedContact] = useState(null);
+
+
+    /*chats*/
+    useEffect(() => {
+        setConversations(conversationsUpdate);
+    }, [conversationsUpdate]);
+
+    const handleSelectContact = (contact) => {
+        setSelectedContact(contact);
+    };
+
+    const renderMessages = (contact) => {
+        const messages = conversations[contact];
+        if (selectedContact === contact) {
+            return messages.map((message, index) => (
+                <div className='flex justify-start items-center p-2' key={index}>
+                    <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                        <span className='text-white text-sm font-semibold uppercase'>{contact[0]}</span>
+                    </div>
+                    <ChatBubble  message={message} />
+                </div>
+
+            ));
+        }
+        return null;  // null when not selected to prevent rendering in contact list
+    };
+    
+    
 
 
     
@@ -30,27 +66,37 @@ const Chat = () => {
         setMessageToSend(event.target.value);
     }
 
+    const onChangePrivateMessage = (event) => {
+        console.log(event.target.value);
+        setPrivateMessage(event.target.value);
+    }
+
     const handleShowPopupMessage = () => {
         setShowPopupMessage(!showPopupMessage)
     }
 
     const handleSendMessage = () => {
         xmpp.sendMessage(toMessage, messagetoSend);
+        setShowPopupMessage(false);
     }
 
 
+    /*logout*/
+    const handleLogout = () => {
+        logout(localStorage.getItem('username'), localStorage.getItem('password'));
+        setTimeout(() => {
+            rout.push('/');
+        }, 2000);
+    }
 
-
-
+    // Intentar reconectar al montar el componente
     useEffect(() => {
-        const user = localStorage.getItem('username');
-        const pass = localStorage.getItem('password');
-        if (user && pass) {
-            setUsername(user);
-            setPassword(pass);
+        const username = localStorage.getItem('username');
+        const password = localStorage.getItem('password');
+        if (!alreadyLogged && username && password) {
+            rout.push('/');
         }
-
-    }, []); 
+    }, [])
     
 
     return (
@@ -62,9 +108,9 @@ const Chat = () => {
                 className="absolute bottom-0 right-0 rounded-md m-2"
             />
             <div className='absolute top-0 right-0 m-4'>
-                <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' />
+                <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' onClick={handleLogout} />
             </div>
-            <div className="mockup-code text-white w-full h-full overflow-y-auto flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
+            <div className="mockup-code text-white w-full h-full flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
                 <div className='bg-transparent text-black rounded-md m-4 md:w-1/4 shadow-lg overflow-y-scroll'>
                 <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Invitations
@@ -96,17 +142,12 @@ const Chat = () => {
                             </button>
                         </div>
                     </span>
-                    {
-                        showPrivateMessages && messages.map(contact => (
-                            <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact.name}>
-                                <div className='flex items-center'>
-                                    <div className='h-8 w-8 bg-green-500 rounded-full'></div>
-                                    <div className='ml-2'>{contact.name}</div>
-                                </div>
-                                <div className='text-sm'>{contact.status}</div>
+                    {showPrivateMessages && Object.keys(conversations).map(contact => (
+                            <div className='flex items-start justify-center flex-col bg-white p-2 mb-2 rounded-xl' key={contact} onClick={() => handleSelectContact(contact)}>
+                                <span className='font-bold text-sm'>{contact.split('@')[0]}</span>
+                                <span className='text-xs'>{conversations[contact][conversations[contact].length - 1]}</span>
                             </div>
-                        ))
-                    }
+                    ))}
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Channels
                         <div className='gap-4 flex justify-center items-center'>
@@ -130,7 +171,22 @@ const Chat = () => {
                         ))
                     }
                 </div>
-                <div className='glassmorphism shadow-2xl text-black p-10 rounded-md m-4 md:w-3/4 h-full md:h-[98%] md:m-4 md:p-0'>
+                <div className='glassmorphism shadow-2xl text-black p-10 rounded-md m-4 md:w-3/4 h-full md:h-[98%] md:m-4 md:p-0 relative'>
+                    <div className='h-[96%] overflow-y-auto'>
+                        {selectedContact && renderMessages(selectedContact)}
+                    </div>
+                    <div className='fixed bottom-0 w-full flex justify-end'>
+                        <input 
+                            type='text' 
+                            placeholder='Message' 
+                            className='p-2 rounded-md bg-white border border-gray-300 w-full'
+                            value={privateMessage}
+                            onChange={onChangePrivateMessage}
+                        />
+                        <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() => xmpp.sendMessage(selectedContact, privateMessage)}>
+                            <FiSend />
+                        </button>
+                    </div>
                 </div>
             </div>
             {

@@ -1,6 +1,6 @@
 const { client, xml } = require('@xmpp/client');
 const debug = require('@xmpp/debug');
-const EventEmitter = require('events');  // Asegúrate de que EventEmitter esté importado correctamente
+const EventEmitter = require('events');
 
 
 class XmppService extends EventEmitter{
@@ -12,6 +12,9 @@ class XmppService extends EventEmitter{
     this.username = username;
     this.password = password;
     this.roster = new Set();
+    this.connecting = false;
+    this.conversations = {};
+
 
     this.xmpp = client({
       service: 'ws://alumchat.lol:7070/ws',
@@ -25,6 +28,7 @@ class XmppService extends EventEmitter{
 
     this.xmpp.on('error', err => {
       console.error('❌ Error:', err.toString());
+      this.connecting = false;
     });
 
     this.xmpp.on('status', status => {
@@ -33,6 +37,7 @@ class XmppService extends EventEmitter{
 
     this.xmpp.on('offline', () => {
       console.log('⏹ Offline');
+      this.connecting = false;
       setTimeout(() => { () => this.connect(this.username, this.password) }, 5000);
     });
 
@@ -49,6 +54,10 @@ class XmppService extends EventEmitter{
         const body = stanza.getChild('body').text();
         const from = stanza.attrs.from;
         console.log('📩 Message from', from, ':', body);
+        this.conversations[from] = this.conversations[from] ? [...this.conversations[from], body] : [body];
+
+        this.emit('messageReceived', this.conversations);
+
       } else if (stanza.is('iq') && stanza.attrs.type === 'result') {
         console.log('📩 IQ result:', stanza.toString());
         this.handleRoster(stanza);
@@ -59,7 +68,7 @@ class XmppService extends EventEmitter{
             console.log('📩 Subscription request from:', from);
             this.emit('invitationReceived', from);
       } else {
-        console.log('📩 Stanza:', stanza.toString());
+        console.log('----:', stanza.toString());
       }
     });
     
@@ -69,6 +78,8 @@ class XmppService extends EventEmitter{
 
 
   async connect(jid, password) {
+    if (this.connecting) return;
+    this.connecting = true;
     this.xmpp.options.username = jid.split('@')[0];
     this.xmpp.options.password = password;
     try {
@@ -77,6 +88,7 @@ class XmppService extends EventEmitter{
       console.log('Connected');
     } catch (err) {
       console.error('❌ Connection error:', err.toString());
+      this.connecting = false;
     }
   }    
 
@@ -99,11 +111,12 @@ class XmppService extends EventEmitter{
       }
   }
 
+  /**
+   * Function to handle roster
+   * @param {any} stanza
+   * @returns {any}
+   */
   handleRoster(stanza) {
-      /*
-        Handler para añadir contactos a roster.
-        Función utilizada en getRoster.
-      */
       const stanzaId = stanza.attrs.id;
       if (stanzaId === 'roster_1') {
         const query = stanza.getChild('query');
@@ -115,7 +128,7 @@ class XmppService extends EventEmitter{
         }
       }
     console.log('🐹 Roster handle:', this.roster)
-    this.emit('rosterUpdated', Array.from(this.roster)); // Send updated roster in an array
+    this.emit('rosterUpdated', Array.from(this.roster)); 
 
   }
 
@@ -168,14 +181,19 @@ class XmppService extends EventEmitter{
     }
   }
 
-  async logout() {
+  async disconnect(jid, password) {
+    this.xmpp.options.username = jid;
+    this.xmpp.options.password = password;
     try {
       await this.xmpp.stop();
-      console.log('Logged out');
+      console.log('Disconnected');
     } catch (err) {
-      console.error('❌ Logout error:', err.toString());
+      console.error('❌ Disconnection error:', err.toString());
+    } finally {
+      this.connecting = false;
     }
   }
+
 }
 
 module.exports = XmppService;
