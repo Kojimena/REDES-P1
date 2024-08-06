@@ -5,7 +5,7 @@ const XmppContext = createContext({
     xmpp: null,
     roster: [],
     login: () => {} ,
-    alreadyLogged: false
+    alreadyLogged: false,
     invitations: [],
     conversationsUpdate: {},
 });
