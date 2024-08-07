@@ -16,6 +16,8 @@ export const XmppProvider = ({ children }) => {
     const [roster, setRoster] = useState([]);
     const [invitations, setInvitations] = useState([]);
     const [conversationsUpdate, setConversationsUpdate] = useState({});
+    const [myPresence, setMyPresence] = useState('');
+    const [contactStatus, setContactStatus] = useState({});
 
 
     /**
@@ -43,8 +45,14 @@ export const XmppProvider = ({ children }) => {
         });
         service.on('messageReceived', (conversations) => {
             setConversationsUpdate(conversations);
-        }
-        );
+        });
+        service.on('presenceUpdated', (presence) => {
+            setMyPresence(presence);
+        } );
+        service.on('contactStatusUpdated', ({ from, status }) => {
+            setContactStatus(prev => ({...prev, [from.split('/')[0]]: status}));
+        } );
+
         setXmpp(service);
         service.connect(username, password);
         setAlreadyLogged(true);
@@ -78,7 +86,7 @@ export const XmppProvider = ({ children }) => {
 
 
     return (
-        <XmppContext.Provider value={{ xmpp, roster, invitations, login, register,logout, alreadyLogged, conversationsUpdate }}>
+        <XmppContext.Provider value={{ xmpp, roster, invitations, login, register,logout, alreadyLogged, conversationsUpdate, myPresence, contactStatus }}>
             {children}
         </XmppContext.Provider>
     );

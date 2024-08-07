@@ -14,7 +14,7 @@ class XmppService extends EventEmitter{
     this.roster = new Set();
     this.connecting = false;
     this.conversations = {};
-
+    this.presence = '';
 
     this.xmpp = client({
       service: 'ws://alumchat.lol:7070/ws',
@@ -43,7 +43,9 @@ class XmppService extends EventEmitter{
 
     this.xmpp.on('online', async (jid) => {
       console.log('▶ Online as', jid.toString());
-      await this.xmpp.send(xml('presence')); 
+      await this.updatePresence('chat', 'Available for chat');
+      this.presence = "Available for chat";
+      this.emit('presenceUpdated', this.presence);
       await new Promise(resolve => setTimeout(resolve, 1000));  
       this.getRoster();
       this.emit('online');
@@ -67,6 +69,11 @@ class XmppService extends EventEmitter{
             const from = stanza.attrs.from;
             console.log('📩 Subscription request from:', from);
             this.emit('invitationReceived', from);
+      } else if (stanza.is('presence') && stanza.getChild('status') && stanza.attrs.from !== this.xmpp.options.jid) {
+        const from = stanza.attrs.from;
+        const status = stanza.getChild('status').text();
+        console.log('👾 Presence from', from, ':', status);
+        this.emit('contactStatusUpdated', { from, status });
       } else {
         console.log('----:', stanza.toString());
       }
@@ -75,7 +82,34 @@ class XmppService extends EventEmitter{
 
   }
 
+  /**
+   * Set initial presence status
+   * @param {string} show - Optional, can be 'chat', 'away', 'dnd', 'xa'
+   * @param {string} status - Optional, text message representing status message
+   */
+  async setPresence(show = '', status = '') {
+    try {
+      const presence = xml('presence', {},
+        show ? xml('show', {}, show) : null,
+        status ? xml('status', {}, status) : null
+      );
+      await this.xmpp.send(presence);
+      console.log('Presence set:', { show, status });
+    } catch (err) {
+      console.error('❌ Error setting presence:', err.toString());
+    }
+  }
 
+  /**
+   * Update presence status
+   * @param {string} show - Optional, can be 'chat', 'away', 'dnd', 'xa'
+   * @param {string} status - Optional, text message representing status message
+   */
+  async updatePresence(show = '', status = '') {
+    this.setPresence(show, status);
+    this.presence = status;
+    this.emit('presenceUpdated', this.presence);
+  }
 
   async connect(jid, password) {
     if (this.connecting) return;

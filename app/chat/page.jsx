@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation'
 import ChatBubble from '@/components/ChatBubble/ChatBubble'
 import { FiSend } from "react-icons/fi"
 import { FaUserFriends } from "react-icons/fa"
+import { CgProfile } from "react-icons/cg"
+import ProfilePopup from '@/components/ProfilePopup/ProfilePopup';
 
 
 
@@ -16,7 +18,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -31,6 +33,8 @@ const Chat = () => {
 
 
     const [viewContacts, setViewContacts] = useState(false);
+
+    const [profilePopup, setProfilePopup] = useState(false);
 
 
     /*chats*/
@@ -100,6 +104,12 @@ const Chat = () => {
         setViewContacts(!viewContacts);
     }
 
+    /*profile*/
+    const handleProfilePopup = () => {
+        setProfilePopup(!profilePopup);
+    }
+
+
 
     // If user is already logged
     useEffect(() => {
@@ -112,7 +122,7 @@ const Chat = () => {
     
 
     return (
-        <div className='page bg-white md:p-10 h-screen relative'>
+        <div className='page bg-white md:p-10 h-screen relative md:flex md:flex-col md:justify-end'>
             <input 
                 type="color" 
                 value={bgColor} 
@@ -120,10 +130,11 @@ const Chat = () => {
                 className="absolute bottom-0 right-0 rounded-md m-2"
             />
             <div className='absolute top-0 right-0 m-4 flex gap-4'>
+                <CgProfile className='text-black text-2xl cursor-pointer' onClick={handleProfilePopup} />
                 <FaUserFriends className='text-black text-2xl cursor-pointer' onClick={handleViewContacts} />
                 <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' onClick={handleLogout} />
             </div>
-            <div className="mockup-code text-white w-full h-full flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
+            <div className="mockup-code text-white w-full h-[98%] flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
                 <div className='bg-transparent text-black rounded-md m-4 md:w-1/4 shadow-lg overflow-y-scroll'>
                 <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Invitations
@@ -244,12 +255,23 @@ const Chat = () => {
                                 <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact}>
                                     <div className='flex items-center'>
                                         <div className='h-8 w-8 bg-black rounded-full'></div>
-                                        <div className='ml-2'>{contact}</div>
+                                        <div className='ml-2 flex flex-col'>
+                                            <span className='font-medium text-black'>{contact}</span>
+                                            <span>status: {contactStatus[contact] ? contactStatus[contact] : 'offline'} </span>
+                                        </div>
                                     </div>
                                 </div>
                             ))
                         }
+                        {
+                            console.log(contactStatus)
+                        }
                     </div>
+                )
+            }
+            {
+                profilePopup && (
+                    <ProfilePopup presence={myPresence} xmpp={xmpp} />
                 )
             }
         </div>
