@@ -7,6 +7,8 @@ import { MdCancel } from "react-icons/md";
 import { useRouter } from 'next/navigation'
 import ChatBubble from '@/components/ChatBubble/ChatBubble'
 import { FiSend } from "react-icons/fi"
+import { FaUserFriends } from "react-icons/fa"
+
 
 
 const Chat = () => {
@@ -14,7 +16,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -26,6 +28,9 @@ const Chat = () => {
 
     const [conversations, setConversations] = useState({});
     const [selectedContact, setSelectedContact] = useState(null);
+
+
+    const [viewContacts, setViewContacts] = useState(false);
 
 
     /*chats*/
@@ -89,7 +94,14 @@ const Chat = () => {
         }, 2000);
     }
 
-    // Intentar reconectar al montar el componente
+    /*contacts*/
+    const handleViewContacts = () => {
+        xmpp.getRoster();
+        setViewContacts(!viewContacts);
+    }
+
+
+    // If user is already logged
     useEffect(() => {
         const username = localStorage.getItem('username');
         const password = localStorage.getItem('password');
@@ -107,7 +119,8 @@ const Chat = () => {
                 onChange={handleColorChange} 
                 className="absolute bottom-0 right-0 rounded-md m-2"
             />
-            <div className='absolute top-0 right-0 m-4'>
+            <div className='absolute top-0 right-0 m-4 flex gap-4'>
+                <FaUserFriends className='text-black text-2xl cursor-pointer' onClick={handleViewContacts} />
                 <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' onClick={handleLogout} />
             </div>
             <div className="mockup-code text-white w-full h-full flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
@@ -214,6 +227,28 @@ const Chat = () => {
                         <button className='bg-black text-white p-2 rounded-md mt-2 w-full' onClick={handleSendMessage}>
                             Send
                         </button>
+                    </div>
+                )
+            }
+            {
+                viewContacts && (
+                    <div className='fixed inset-0 w-80 m-4 bg-white p-4 rounded-md shadow-lg'>
+                        <span className='text-md p-4 font-poppins text-black flex justify-center items-center font-semibold'>
+                            Contacts
+                        </span>
+                        <button  className='absolute top-0 right-0' onClick={handleViewContacts}>
+                            <MdCancel  className='text-black text-2xl cursor-pointer' />
+                        </button>
+                        {
+                            roster.map(contact => (
+                                <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact}>
+                                    <div className='flex items-center'>
+                                        <div className='h-8 w-8 bg-black rounded-full'></div>
+                                        <div className='ml-2'>{contact}</div>
+                                    </div>
+                                </div>
+                            ))
+                        }
                     </div>
                 )
             }
