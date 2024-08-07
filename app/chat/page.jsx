@@ -150,6 +150,9 @@ const Chat = () => {
                             <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={invite}>
                                 <div className='flex items-center'>
                                     <div className='ml-2'>{invite}</div>
+                                    <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() => xmpp.acceptInvitation(invite)}> 
+                                        Accept
+                                    </button>
                                 </div>
                             </div>
                         ))

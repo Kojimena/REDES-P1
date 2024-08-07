@@ -57,23 +57,26 @@ class XmppService extends EventEmitter{
         const from = stanza.attrs.from;
         console.log('📩 Message from', from, ':', body);
         this.conversations[from] = this.conversations[from] ? [...this.conversations[from], body] : [body];
-
         this.emit('messageReceived', this.conversations);
 
       } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'roster_1') {
         console.log('📩 IQ result:', stanza.toString());
         this.handleRoster(stanza);
+
       } else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query') && stanza.getChild('query').attrs.xmlns === 'jabber:iq:roster') {
         console.log('📩 Rosterrrrrrrrrr:', stanza.toString());
+
       } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
             const from = stanza.attrs.from;
             console.log('📩 Subscription request from:', from);
             this.emit('invitationReceived', from);
+
       } else if (stanza.is('presence') && stanza.getChild('status') && stanza.attrs.from !== this.xmpp.options.jid) {
         const from = stanza.attrs.from;
         const status = stanza.getChild('status').text();
         console.log('👾 Presence from', from, ':', status);
         this.emit('contactStatusUpdated', { from, status });
+
       } else {
         console.log('----:', stanza.toString());
       }
@@ -207,6 +210,16 @@ class XmppService extends EventEmitter{
       console.log('Message sent');
     } catch (err) {
       console.error('❌ Message error:', err.toString());
+    }
+  }
+
+  async acceptInvitation(jid) {
+    try {
+      const stanza = xml('presence', { to: jid, type: 'subscribed' });
+      await this.xmpp.send(stanza);
+      console.log('Invitation accepted');
+    } catch (err) {
+      console.error('❌ Accept invitation error:', err.toString());
     }
   }
 
