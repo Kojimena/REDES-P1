@@ -36,6 +36,9 @@ export const XmppProvider = ({ children }) => {
         service.on('invitationReceived', (jid) => {
             setInvitations(prev => [...prev, jid]); 
         });
+        service.on('invitationAccepted', (jid) => {
+            setInvitations(prev => prev.filter(invitation => invitation !== jid));
+        });
         service.on('online', () => {
             console.log('Connected as: ', username);
         });

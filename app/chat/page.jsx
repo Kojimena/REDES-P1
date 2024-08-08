@@ -50,11 +50,25 @@ const Chat = () => {
         const messages = conversations[contact];
         if (selectedContact === contact) {
             return messages.map((message, index) => (
-                <div className='flex justify-start items-center p-2' key={index}>
-                    <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
-                        <span className='text-white text-sm font-semibold uppercase'>{contact[0]}</span>
-                    </div>
-                    <ChatBubble  message={message} />
+                <div className='flex w-full items-center p-2' key={index}>
+                    {
+                        message.includes('Me:') ? (
+                            <div className='flex justify-end w-full'>
+                                <ChatBubble message={message} type='sent' />
+                                <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                                    <span className='text-white text-sm font-semibold uppercase'>Me</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className='flex'>
+                            <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                                <span className='text-white text-sm font-semibold uppercase'>{contact[0]}</span>
+                            </div>
+                            <ChatBubble  message={message} type='received' />
+                            </div>
+                        )
+                    }
+
                 </div>
 
             ));
@@ -78,6 +92,17 @@ const Chat = () => {
     const onChangePrivateMessage = (event) => {
         console.log(event.target.value);
         setPrivateMessage(event.target.value);
+    }
+
+    const handleSendPrivateMessage = ({to, message}) => {
+        xmpp.sendMessage(to, message);
+        console.log('Mensaje enviado')
+        const updatedMessages = conversations[selectedContact]
+        ? [...conversations[selectedContact], "Me: " + message]
+        : [privateMessage];
+        setConversations({ ...conversations, [selectedContact]: updatedMessages });
+        setPrivateMessage('');  // Limpiar el campo de entrada después de enviar
+        console.log(conversations)
     }
 
     const handleShowPopupMessage = () => {
@@ -210,7 +235,7 @@ const Chat = () => {
                             value={privateMessage}
                             onChange={onChangePrivateMessage}
                         />
-                        <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() => xmpp.sendMessage(selectedContact, privateMessage)}>
+                        <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() => handleSendPrivateMessage({to: selectedContact, message: privateMessage})}>
                             <FiSend />
                         </button>
                     </div>

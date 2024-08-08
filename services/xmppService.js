@@ -217,6 +217,7 @@ class XmppService extends EventEmitter{
     try {
       const stanza = xml('presence', { to: jid, type: 'subscribed' });
       await this.xmpp.send(stanza);
+      this.emit('invitationAccepted', jid);
       console.log('Invitation accepted');
     } catch (err) {
       console.error('❌ Accept invitation error:', err.toString());
