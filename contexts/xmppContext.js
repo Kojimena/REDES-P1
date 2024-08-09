@@ -1,4 +1,4 @@
-import { createContext, use, useContext, useState } from 'react';
+import { createContext, use, useContext, useState, useEffect } from 'react';
 import XmppService from '@/services/xmppService';
 
 const XmppContext = createContext({
@@ -19,6 +19,21 @@ export const XmppProvider = ({ children }) => {
     const [myPresence, setMyPresence] = useState('');
     const [contactStatus, setContactStatus] = useState({});
 
+
+    useEffect(() => {
+        if (xmpp) {
+            // Suscribirse a los eventos solo cuando xmpp está configurado
+            const handleMessages = (conversations) => {
+                setConversationsUpdate(prev => ({ ...prev, ...conversations }));
+            };
+
+            xmpp.on('messageReceived', handleMessages);
+
+            return () => {
+                xmpp.off('messageReceived', handleMessages);
+            };
+        }
+    }, [xmpp]);
 
     /**
      * Function to login to xmpp
@@ -45,9 +60,6 @@ export const XmppProvider = ({ children }) => {
         service.on('offline', () => {
             console.log('Disconnected');
             setAlreadyLogged(false);
-        });
-        service.on('messageReceived', (conversations) => {
-            setConversationsUpdate(conversations);
         });
         service.on('presenceUpdated', (presence) => {
             setMyPresence(presence);

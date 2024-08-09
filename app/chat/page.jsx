@@ -52,9 +52,9 @@ const Chat = () => {
             return messages.map((message, index) => (
                 <div className='flex w-full items-center p-2' key={index}>
                     {
-                        message.includes('Me:') ? (
+                        message.includes('Me: ') ? (
                             <div className='flex justify-end w-full'>
-                                <ChatBubble message={message} type='sent' />
+                                <ChatBubble message={message.split('Me: ')[1]} type='sent' />
                                 <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
                                     <span className='text-white text-sm font-semibold uppercase'>Me</span>
                                 </div>
@@ -96,13 +96,8 @@ const Chat = () => {
 
     const handleSendPrivateMessage = ({to, message}) => {
         xmpp.sendMessage(to, message);
-        console.log('Mensaje enviado')
-        const updatedMessages = conversations[selectedContact]
-        ? [...conversations[selectedContact], "Me: " + message]
-        : [privateMessage];
-        setConversations({ ...conversations, [selectedContact]: updatedMessages });
-        setPrivateMessage('');  // Limpiar el campo de entrada después de enviar
         console.log(conversations)
+        setPrivateMessage('');
     }
 
     const handleShowPopupMessage = () => {
@@ -197,7 +192,7 @@ const Chat = () => {
                     {showPrivateMessages && Object.keys(conversations).map(contact => (
                             <div className='flex items-start justify-center flex-col bg-white p-2 mb-2 rounded-xl' key={contact} onClick={() => handleSelectContact(contact)}>
                                 <span className='font-bold text-sm'>{contact.split('@')[0]}</span>
-                                <span className='text-xs'>{conversations[contact][conversations[contact].length - 1]}</span>
+                                <span className='text-xs truncate w-3/4'>{conversations[contact][conversations[contact].length - 1]}</span>
                             </div>
                     ))}
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>

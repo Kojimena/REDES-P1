@@ -57,6 +57,7 @@ class XmppService extends EventEmitter{
         const from = stanza.attrs.from;
         console.log('📩 Message from', from, ':', body);
         this.conversations[from] = this.conversations[from] ? [...this.conversations[from], body] : [body];
+        console.log('📩 Conversations:', this.conversations);
         this.emit('messageReceived', this.conversations);
 
       } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'roster_1') {
@@ -208,6 +209,8 @@ class XmppService extends EventEmitter{
       const stanza = xml('message', { to, type: 'chat' }, xml('body', {}, message));
       await this.xmpp.send(stanza);
       console.log('Message sent');
+      this.conversations[to] = this.conversations[to] ? [...this.conversations[to],"Me: "+message] : ["Me: "+message];
+      this.emit('messageReceived', this.conversations);
     } catch (err) {
       console.error('❌ Message error:', err.toString());
     }
