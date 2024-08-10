@@ -227,6 +227,34 @@ class XmppService extends EventEmitter{
     }
   }
 
+  async removeContact(jid) {
+    try {
+      const removeStanza = xml('iq', { type: 'set', id: 'removeContact_1' },
+        xml('query', { xmlns: 'jabber:iq:roster' },
+          xml('item', { jid: jid, subscription: 'remove' })
+        )
+      );
+      await this.xmpp.send(removeStanza);
+      console.log('Contact removal requested for:', jid);
+  
+      this.roster.delete(jid);
+      this.emit('rosterUpdated', Array.from(this.roster));
+    } catch (err) {
+      console.error('❌ Error removing contact:', err.toString());
+    }
+  }
+
+  async sendSubscriptionRequest(jid) {
+    try {
+      const stanza = xml('presence', { to: jid, type: 'subscribe' });
+      await this.xmpp.send(stanza);
+      console.log('Subscription request sent to:', jid);
+    } catch (err) {
+      console.error('❌ Subscription request error:', err.toString());
+    }
+  }
+  
+
   async disconnect(jid, password) {
     this.xmpp.options.username = jid;
     this.xmpp.options.password = password;

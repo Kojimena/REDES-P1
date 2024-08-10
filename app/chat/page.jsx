@@ -9,7 +9,9 @@ import ChatBubble from '@/components/ChatBubble/ChatBubble'
 import { FiSend } from "react-icons/fi"
 import { FaUserFriends } from "react-icons/fa"
 import { CgProfile } from "react-icons/cg"
-import ProfilePopup from '@/components/ProfilePopup/ProfilePopup';
+import ProfilePopup from '@/components/ProfilePopup/ProfilePopup'
+import ContactPopup from '@/components/ContactPopup/ContactPopup'
+import { AiTwotoneDelete } from "react-icons/ai"
 
 
 
@@ -266,7 +268,7 @@ const Chat = () => {
             }
             {
                 viewContacts && (
-                    <div className='fixed inset-0 w-80 m-4 bg-white p-4 rounded-md shadow-lg'>
+                    <div className='fixed inset-0 w-96 m-4 bg-white p-4 rounded-md shadow-lg'>
                         <span className='text-md p-4 font-poppins text-black flex justify-center items-center font-semibold'>
                             Contacts
                         </span>
@@ -282,13 +284,12 @@ const Chat = () => {
                                             <span className='font-medium text-black'>{contact}</span>
                                             <span>status: {contactStatus[contact] ? contactStatus[contact] : 'offline'} </span>
                                         </div>
+                                        <AiTwotoneDelete className='text-red-700 text-2xl cursor-pointer absolute right-10' onClick={() => xmpp.removeContact(contact)} />
                                     </div>
                                 </div>
                             ))
-                        }
-                        {
-                            console.log(contactStatus)
-                        }
+                        }       
+                        <ContactPopup xmpp={xmpp} />               
                     </div>
                 )
             }
