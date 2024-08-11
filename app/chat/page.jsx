@@ -12,6 +12,7 @@ import { CgProfile } from "react-icons/cg"
 import ProfilePopup from '@/components/ProfilePopup/ProfilePopup'
 import ContactPopup from '@/components/ContactPopup/ContactPopup'
 import { AiTwotoneDelete } from "react-icons/ai"
+import FileUploader from '@/components/FileUploader/FileUploader';
 
 
 
@@ -230,6 +231,9 @@ const Chat = () => {
                         {selectedContact && renderMessages(selectedContact)}
                     </div>
                     <div className='fixed bottom-0 w-full flex justify-end'>
+                        <div className='w-1/4'>
+                            <FileUploader xmpp={xmpp} to={selectedContact}/>
+                        </div>
                         <input 
                             type='text' 
                             placeholder='Message' 
