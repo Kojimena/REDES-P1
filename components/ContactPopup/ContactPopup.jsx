@@ -20,11 +20,11 @@ const ContactPopup = ({xmpp}) => {
         console.log('Contact added');
     }
   return (
-    <div className='absolute bottom-0 left-0 m-4 flex justify-center items-center'>
+    <div className='absolute bottom-0 left-0 m-4 flex justify-center gap-10 items-center'>
             <IoPersonAdd className='text-black text-2xl cursor-pointer' onClick={handleShowInput} />
             {
                 showInput && (
-                    <div className='flex gap-4'>
+                    <div className='flex gap-4 justify-between'>
                         <input type="text" placeholder="Contact" className='input input-bordered p-2' onChange={onChangeContact} />
                         <button className='btn bg-black text-white' onClick={handleAddContact}>Add</button>
                     </div>

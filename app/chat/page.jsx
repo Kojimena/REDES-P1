@@ -21,7 +21,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -39,6 +39,10 @@ const Chat = () => {
 
     const [profilePopup, setProfilePopup] = useState(false);
 
+    const [joinChannel, setJoinChannel] = useState(false);
+    const [nickname, setNickname] = useState('');
+    const[selectedChannel, setSelectedChannel] = useState(null);
+
 
     /*chats*/
     useEffect(() => {
@@ -46,12 +50,13 @@ const Chat = () => {
     }, [conversationsUpdate]);
 
     const handleSelectContact = (contact) => {
+        console.log("Selected contact: ", contact);
         setSelectedContact(contact);
     };
 
     const renderMessages = (contact) => {
         const messages = conversations[contact];
-        if (selectedContact === contact) {
+        if (selectedContact === contact && !contact.includes('@conference')) {
             return messages.map((message, index) => (
                 <div className='flex w-full items-center p-2' key={index}>
                     {
@@ -72,6 +77,43 @@ const Chat = () => {
                         )
                     }
 
+                </div>
+
+            ));
+        }
+        else if (selectedContact === contact && contact.includes('@conference')) {
+            return grupalConversations[contact].map((messageObj, index) => (
+                <div className='flex w-full items-center p-2' key={index}>
+                    {
+
+                        messageObj.sender === xmpp.username ? (
+                            <div className='flex justify-end w-full'>
+                                {
+                                    messageObj.message? (
+                                        <ChatBubble message={messageObj.message} type='sent' />
+                                    ) : (
+                                        null
+                                    )
+                                }
+                                <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                                    <span className='text-white text-sm font-semibold uppercase'>Me</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className='flex'>
+                            <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                                <span className='text-white text-sm font-semibold uppercase'>{messageObj.sender[0]}</span>
+                            </div>
+                            {
+                                messageObj.message ? (
+                                    <ChatBubble  message={messageObj.message} type='received' />
+                                ) : (
+                                    null
+                                )
+                            }
+                            </div>
+                        )
+                    }
                 </div>
 
             ));
@@ -98,8 +140,15 @@ const Chat = () => {
     }
 
     const handleSendPrivateMessage = ({to, message}) => {
-        xmpp.sendMessage(to, message);
-        console.log(conversations)
+            console.log('Sending message to user');
+                xmpp.sendMessage(to, message);
+                console.log(conversations)
+                setPrivateMessage('');
+    }
+
+    const handleSendGroupMessage = ({to, message}) => {
+        console.log('Sending sendMessageToRoom', to, message);
+        xmpp.sendMessageToRoom(to, message);
         setPrivateMessage('');
     }
 
@@ -108,7 +157,17 @@ const Chat = () => {
     }
 
     const handleSendMessage = () => {
-        xmpp.sendMessage(toMessage, messagetoSend);
+        if (toMessage && messagetoSend && toMessage.includes('@conference')) {
+            console.log('Sending message to room');
+            xmpp.sendMessageToRoom(toMessage, messagetoSend);
+            setToMessage('');
+            setMessageToSend('');
+        }else if (toMessage && messagetoSend && !toMessage.includes('@conference')) {
+            console.log('Sending message to user');
+            xmpp.sendMessage(toMessage, messagetoSend);
+            setToMessage('');
+            setMessageToSend('');
+        }
         setShowPopupMessage(false);
     }
 
@@ -132,7 +191,20 @@ const Chat = () => {
     /*profile*/
     const handleProfilePopup = () => {
         setProfilePopup(!profilePopup);
-    }        
+    }       
+    
+    /*chatrooms*/
+    const handleJoinChannel = () => {
+        setJoinChannel(!joinChannel);
+    }
+
+    const onhandleChannel = () => {
+        setShowChannelMessages(!showChannelMessages);
+    }
+        
+
+
+
 
     useEffect(() => {
         // Intentar restaurar la sesión al cargar el componente si está marcado para reconectar
@@ -175,15 +247,36 @@ const Chat = () => {
                     </span>
                     {
                        showInvitations && invitations.map(invite => (
-                            <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={invite}>
+                            <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer relative' key={invite}>
                                 <div className='flex items-center'>
                                     <div className='ml-2'>{invite}</div>
-                                    <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() => xmpp.acceptInvitation(invite)}> 
+                                    <button className='bg-black text-white p-2 rounded-r-xl ml-2 absolute right-0' onClick={() => xmpp.acceptInvitation(invite)}> 
                                         Accept
                                     </button>
                                 </div>
                             </div>
                         ))
+                    }
+                    {
+                        showInvitations && grupalInvitations.map(invite => (
+                            <div className='flex items-center justify-between p-2 m-2 bg-gray-500 rounded-xl cursor-pointer relative' key={invite}>
+                                <div className='flex items-center'>
+                                    <div className='ml-2 text-white'>{invite}</div>
+                                    <button className='bg-black text-white p-2 rounded-r-xl ml-2 absolute right-0' onClick={handleJoinChannel}>
+                                        Accept
+                                    </button>
+                                </div>
+                                {
+                                    joinChannel && (
+                                        <div className='flex flex-col gap-4'>
+                                            <input type='text' placeholder='nickname' className='input input-bordered p-2' onChange={(e) => setNickname(e.target.value)} />
+                                            <button className='btn bg-black text-white' onClick={() => xmpp.joinRoom(invite, nickname)}>Join</button>
+                                        </div>
+                                    )
+                                }
+                            </div>
+                        ))
+
                     }
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Direct Messages
@@ -208,7 +301,7 @@ const Chat = () => {
                         <div className='gap-4 flex justify-center items-center'>
                             <IoIosArrowDropdownCircle 
                                 className='text-white ml-2 cursor-pointer'
-                                onClick={() => setShowChannelMessages(!showChannelMessages)}
+                                onClick={onhandleChannel}
                             />
                             <button>
                                 +
@@ -216,12 +309,9 @@ const Chat = () => {
                         </div>
                     </span>
                     {
-                        showChannelMessages && channel_messages.map(channel => (
-                            <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={channel.name}>
-                                <div className='flex items-center'>
-                                    <div className='h-8 w-8 bg-green-500 rounded-full'></div>
-                                    <div className='ml-2'>{channel.name}</div>
-                                </div>
+                        showChannelMessages && Object.keys(grupalConversations).map(channel => (
+                            <div className='flex items-start justify-center flex-col bg-white p-2 mb-2 rounded-xl' key={channel} onClick={() => handleSelectContact(channel)}>
+                                <span className='font-bold text-sm'>{channel}</span>
                             </div>
                         ))
                     }
@@ -241,7 +331,7 @@ const Chat = () => {
                             value={privateMessage}
                             onChange={onChangePrivateMessage}
                         />
-                        <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() => handleSendPrivateMessage({to: selectedContact, message: privateMessage})}>
+                        <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() =>  selectedContact.includes('@conference') ? handleSendGroupMessage({to: selectedContact, message: privateMessage}) : handleSendPrivateMessage({to: selectedContact, message: privateMessage})}>
                             <FiSend />
                         </button>
                     </div>

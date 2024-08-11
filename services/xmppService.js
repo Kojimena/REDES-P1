@@ -15,6 +15,8 @@ class XmppService extends EventEmitter{
     this.connecting = false;
     this.conversations = {};
     this.presence = '';
+    this.groupConversations = {};
+
 
     this.xmpp = client({
       service: 'ws://alumchat.lol:7070/ws',
@@ -54,12 +56,28 @@ class XmppService extends EventEmitter{
       if (stanza.is('message') && stanza.getChild('body')) {
         const body = stanza.getChild('body').text();
         const from = stanza.attrs.from;
+        const isGroupChat = stanza.attrs.type === 'groupchat'; // Verificar si es un mensaje de chat grupal
+    
         console.log('📩 Message from', from, ':', body);
-        this.conversations[from] = this.conversations[from] ? [...this.conversations[from], body] : [body];
-        console.log('📩 Conversations:', this.conversations);
-        this.emit('messageReceived', this.conversations);
-
-      } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'roster_1') {
+    
+        if (isGroupChat) {
+          this.groupConversations = this.groupConversations || {};
+          const groupJid = from.split('/')[0];
+          const senderJid = from.split('/')[1];
+      
+          if (!this.groupConversations[groupJid]) {
+              this.groupConversations[groupJid] = [];
+          }
+      
+          this.groupConversations[groupJid].push({ sender: senderJid, message: body });
+          console.log('📩 Group Conversations:', this.groupConversations);
+          this.emit('groupMessageReceived', this.groupConversations);
+        } else {
+            this.conversations[from] = this.conversations[from] ? [...this.conversations[from], body] : [body];
+            console.log('📩 Conversations:', this.conversations);
+            this.emit('messageReceived', this.conversations);
+        }
+    } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'roster_1') {
         console.log('📩 IQ result:', stanza.toString());
         this.handleRoster(stanza);
 
@@ -77,12 +95,47 @@ class XmppService extends EventEmitter{
         console.log('👾 Presence from', from, ':', status);
         this.emit('contactStatusUpdated', { from, status });
 
-      } else {
+      }else if (stanza.is('message') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
+              const invite = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('invite');
+              if (invite) {
+                  const from = invite.attrs.from;
+                  const roomJid = stanza.getChild('x', 'jabber:x:conference').attrs.jid;
+                  console.log(`Invitación recibida de ${from} para unirse a ${roomJid}`);
+                  this.emit('roomInvitationReceived',roomJid);
+              }
+      } else if  (stanza.is('presence') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
+        const item = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('item');
+        const status = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChildren('status');
+        if (item.attrs.affiliation === 'member' && item.attrs.role === 'participant') {
+            const roomJid = stanza.attrs.from;
+            console.log(`Unido a la sala: ${roomJid}`);
+            this.emit('roomJoined',roomJid);
+        }
+      } else if (stanza.is('message') && stanza.getChild('event', 'http://jabber.org/protocol/pubsub#event')) {
+        const eventElement = stanza.getChild('event', 'http://jabber.org/protocol/pubsub#event');
+          const items = eventElement.getChild('items');
+          if (items && items.attrs.node === 'storage:bookmarks') {
+              const item = items.getChild('item');
+              if (item) {
+                  const storage = item.getChild('storage', 'storage:bookmarks');
+                  if (storage) {
+                      const conference = storage.getChild('conference');
+                      if (conference) {
+                          const jid = conference.attrs.jid;
+                          const nick = conference.getChildText('nick');
+                          const autojoin = conference.attrs.autojoin === 'true';
+                          console.log(`Bookmark found: JID=${jid}, Nick=${nick}, Autojoin=${autojoin}`);
+                          this.saveBookmark(jid, nick, autojoin);
+                      }
+                  }
+              }
+          }
+      } 
+      else {
         console.log('----:', stanza.toString());
       }
     });
     
-
   }
 
   /**
@@ -213,6 +266,18 @@ class XmppService extends EventEmitter{
     }
   }
 
+  sendMessageToRoom(roomJid, message) {
+    try {
+      const stanza = xml('message', {to: roomJid, type: 'groupchat'}, xml('body', {}, message));
+      this.xmpp.send(stanza);
+      this.emit('groupMessageReceived', this.groupConversations);
+    } catch (err) {
+      console.error('Error sending message to group chat:', err.toString());
+    }
+  }
+  
+
+
   async acceptInvitation(jid) {
     try {
       const stanza = xml('presence', { to: jid, type: 'subscribed' });
@@ -222,7 +287,7 @@ class XmppService extends EventEmitter{
     } catch (err) {
       console.error('❌ Accept invitation error:', err.toString());
     }
-  }
+  }    
 
   async removeContact(jid) {
     try {
@@ -250,7 +315,26 @@ class XmppService extends EventEmitter{
       console.error('❌ Subscription request error:', err.toString());
     }
   }
-  
+
+  async joinRoom(roomJid, nickname) {
+    const presence = xml('presence', {
+        to: `${roomJid}/${nickname}`
+    }, xml('x', { xmlns: 'http://jabber.org/protocol/muc' }));
+    try {
+        await this.xmpp.send(presence);
+        console.log(`Unido a la sala: ${roomJid} como ${nickname}`);
+        this.emit('roomJoined', roomJid);
+    } catch (err) {
+        console.error('Error al unirse a la sala:', err.toString());
+    }
+  }
+
+
+  saveBookmark(jid, nick, autojoin) {
+    if (autojoin) {
+        this.joinRoom(jid, this.xmpp.options.username);
+    }
+  }
 
   async disconnect() {
     console.log('Iniciando la desconexión...');

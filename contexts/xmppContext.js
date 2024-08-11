@@ -8,6 +8,7 @@ const XmppContext = createContext({
     alreadyLogged: false,
     invitations: [],
     conversationsUpdate: {},
+    grupalInvitations: [],
 });
 
 export const XmppProvider = ({ children }) => {
@@ -16,8 +17,10 @@ export const XmppProvider = ({ children }) => {
     const [roster, setRoster] = useState([]);
     const [invitations, setInvitations] = useState([]);
     const [conversationsUpdate, setConversationsUpdate] = useState({});
+    const [grupalConversations, setGrupalConversations] = useState({});
     const [myPresence, setMyPresence] = useState('');
     const [contactStatus, setContactStatus] = useState({});
+    const [grupalInvitations, setGrupalInvitations] = useState([]);
 
 
     useEffect(() => {
@@ -27,10 +30,16 @@ export const XmppProvider = ({ children }) => {
                 setConversationsUpdate(prev => ({ ...prev, ...conversations }));
             };
 
+            const handleGrupalMessages = (conversations) => {
+                setGrupalConversations(prev => ({ ...prev, ...conversations }));
+            };
+
             xmpp.on('messageReceived', handleMessages);
+            xmpp.on('groupMessageReceived', handleGrupalMessages);
 
             return () => {
                 xmpp.off('messageReceived', handleMessages);
+                xmpp.off('groupMessageReceived', handleGrupalMessages);
             };
         }
     }, [xmpp]);
@@ -75,6 +84,13 @@ export const XmppProvider = ({ children }) => {
         service.on('invitationReceived', (jid) => {
             setInvitations(prev => [...prev, jid]); 
         });
+        service.on('roomInvitationReceived', (roomJid) => {
+            setGrupalInvitations(prev => [...prev, roomJid]);
+        });
+        service.on('roomJoined', (roomJid) => {
+            setGrupalInvitations(prev => prev.filter(invitation => invitation !== roomJid));
+        }
+        );
         service.on('invitationAccepted', (jid) => {
             setInvitations(prev => prev.filter(invitation => invitation !== jid));
         });
@@ -127,7 +143,7 @@ export const XmppProvider = ({ children }) => {
 
 
     return (
-        <XmppContext.Provider value={{ xmpp, roster, invitations, login, register,logout, alreadyLogged, conversationsUpdate, myPresence, contactStatus }}>
+        <XmppContext.Provider value={{ xmpp, roster, invitations, login, register,logout, alreadyLogged, conversationsUpdate, myPresence, contactStatus, grupalInvitations, grupalConversations }}>
             {children}
         </XmppContext.Provider>
     );
