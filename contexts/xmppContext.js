@@ -35,6 +35,27 @@ export const XmppProvider = ({ children }) => {
         }
     }, [xmpp]);
 
+
+    useEffect(() => {
+        const handleUnload = (event) => {
+            if (xmpp) {
+                localStorage.setItem('reconnect', 'true'); 
+                setTimeout(() => {
+                    xmpp.disconnect();
+                } , 10000);
+                event.returnValue = "Estás cerrando la página. Desconectando la sesión XMPP.";
+            }
+        };
+    
+        window.addEventListener('beforeunload', handleUnload);
+    
+        return () => {
+            window.removeEventListener('beforeunload', handleUnload);
+            localStorage.removeItem('reconnect'); 
+        };
+    }, [xmpp]);
+    
+
     /**
      * Function to login to xmpp
      * @param {any} username
@@ -42,8 +63,11 @@ export const XmppProvider = ({ children }) => {
      * @returns {any}
      */
     const login = (username, password) => {
-        console.log('LOOOOOOOOG')
-        console.log(alreadyLogged)
+        console.log('Intentando iniciar sesión');
+        if (alreadyLogged) {
+            console.log('Ya existe una sesión activa. Evitando la reconexión.');
+            return;
+        }
         const service = new XmppService(username, password);
         service.on('rosterUpdated', updatedRoster => {
             setRoster(updatedRoster);
@@ -56,6 +80,7 @@ export const XmppProvider = ({ children }) => {
         });
         service.on('online', () => {
             console.log('Connected as: ', username);
+            setAlreadyLogged(true);
         });
         service.on('offline', () => {
             console.log('Disconnected');
@@ -67,6 +92,7 @@ export const XmppProvider = ({ children }) => {
         service.on('contactStatusUpdated', ({ from, status }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: status}));
         } );
+    
 
         setXmpp(service);
         service.connect(username, password);

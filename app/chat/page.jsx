@@ -20,7 +20,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -115,6 +115,8 @@ const Chat = () => {
     /*logout*/
     const handleLogout = () => {
         logout(localStorage.getItem('username'), localStorage.getItem('password'));
+        localStorage.removeItem('username');
+        localStorage.removeItem('password');
         setTimeout(() => {
             rout.push('/');
         }, 2000);
@@ -129,18 +131,21 @@ const Chat = () => {
     /*profile*/
     const handleProfilePopup = () => {
         setProfilePopup(!profilePopup);
-    }
+    }        
 
-
-
-    // If user is already logged
     useEffect(() => {
+        // Intentar restaurar la sesión al cargar el componente si está marcado para reconectar
+        const shouldReconnect = localStorage.getItem('reconnect');
         const username = localStorage.getItem('username');
         const password = localStorage.getItem('password');
-        if (!alreadyLogged && username && password) {
-            rout.push('/');
+    
+        if (shouldReconnect === 'true' && username && password) {
+            login(username, password);
+            localStorage.removeItem('reconnect'); // Limpiar la marca después de reconectar
         }
-    }, [])
+    }, [alreadyLogged]);
+    
+
     
 
     return (

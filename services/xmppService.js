@@ -28,7 +28,6 @@ class XmppService extends EventEmitter{
 
     this.xmpp.on('error', err => {
       console.error('❌ Error:', err.toString());
-      this.connecting = false;
     });
 
     this.xmpp.on('status', status => {
@@ -38,7 +37,7 @@ class XmppService extends EventEmitter{
     this.xmpp.on('offline', () => {
       console.log('⏹ Offline');
       this.connecting = false;
-      setTimeout(() => { () => this.connect(this.username, this.password) }, 5000);
+      setTimeout(() => { () => window.location.reload(); }, 5000);
     });
 
     this.xmpp.on('online', async (jid) => {
@@ -104,6 +103,7 @@ class XmppService extends EventEmitter{
     }
   }
 
+
   /**
    * Update presence status
    * @param {string} show - Optional, can be 'chat', 'away', 'dnd', 'xa'
@@ -116,8 +116,6 @@ class XmppService extends EventEmitter{
   }
 
   async connect(jid, password) {
-    if (this.connecting) return;
-    this.connecting = true;
     this.xmpp.options.username = jid.split('@')[0];
     this.xmpp.options.password = password;
     try {
@@ -126,7 +124,6 @@ class XmppService extends EventEmitter{
       console.log('Connected');
     } catch (err) {
       console.error('❌ Connection error:', err.toString());
-      this.connecting = false;
     }
   }    
 
@@ -255,18 +252,15 @@ class XmppService extends EventEmitter{
   }
   
 
-  async disconnect(jid, password) {
-    this.xmpp.options.username = jid;
-    this.xmpp.options.password = password;
-    try {
-      await this.xmpp.stop();
-      console.log('Disconnected');
-    } catch (err) {
-      console.error('❌ Disconnection error:', err.toString());
-    } finally {
-      this.connecting = false;
-    }
-  }
+  async disconnect() {
+    console.log('Iniciando la desconexión...');
+    this.xmpp.stop().then(() => {
+        console.log('Desconexión completada');
+        this.emit('offline');
+    }).catch(err => {
+        console.error('Error al desconectar:', err.toString());
+    });
+}
 
 }
 
