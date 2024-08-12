@@ -235,10 +235,20 @@ const Chat = () => {
                 className="absolute bottom-0 right-0 rounded-md m-2"
             />
             <div className='absolute top-0 right-0 m-4 flex gap-4'>
-                <CgProfile className='text-black text-2xl cursor-pointer' onClick={handleProfilePopup} />
-                <FaUserFriends className='text-black text-2xl cursor-pointer' onClick={handleViewContacts} />
-                <IoNotifications className='text-black text-2xl cursor-pointer' onClick={handleNotification} />
-                <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' onClick={handleLogout} />
+                <CgProfile className='text-black text-3xl cursor-pointer' onClick={handleProfilePopup} />
+                <FaUserFriends className='text-black text-3xl cursor-pointer' onClick={handleViewContacts} />
+                <div className='relative'>
+                    <IoNotifications className='text-black text-3xl cursor-pointer' onClick={handleNotification} />
+                    {
+                        notification.length > 0 && (
+                            <div className=' bg-red-500 rounded-full px-2 py-1 absolute -top-2 -right-2'>
+                                <span className='text-white text-xs font-semibold'>{notification.length}</span>
+                            </div>
+                        )
+                    }
+                </div>
+                <RiLogoutCircleRLine className='text-black text-3xl cursor-pointer' onClick={handleLogout} />
+                
             </div>
             <div className="mockup-code text-white w-full h-[98%] flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
                 <div className='bg-transparent text-black rounded-md m-4 md:w-1/4 shadow-lg overflow-y-scroll'>
