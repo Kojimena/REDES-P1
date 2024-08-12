@@ -177,6 +177,7 @@ class XmppService extends EventEmitter{
       console.log('Connected');
     } catch (err) {
       console.error('❌ Connection error:', err.toString());
+      this.emit('errorconnecting');
     }
   }    
 

@@ -14,13 +14,15 @@ const Signup = () => {
   const { register } = useXmpp();
 
   const handleRegister = async () => {
-    try {
-      await register(jid.split('@')[0], password);
-      handleRememberMe();
-      setSuccess(true);
-    }
-    catch (err) {
-      console.error('❌ Error:', err.toString());
+    if (jid && password) {
+      try {
+        await register(jid.split('@')[0], password);
+        handleRememberMe();
+        setSuccess(true);
+      }
+      catch (err) {
+        console.error('❌ Error:', err.toString());
+      }
     }
   }
 
@@ -87,7 +89,7 @@ const Signup = () => {
             <div className="form-control mt-6">
               <Button
                 variant="contained"
-                color="primary"
+                className='btn bg-black text-white'
                 onClick={handleRegister}
               >
                 Sign Up

@@ -1,5 +1,6 @@
 import { createContext, use, useContext, useState, useEffect } from 'react';
 import XmppService from '@/services/xmppService';
+import { useRouter } from 'next/navigation'
 
 const XmppContext = createContext({
     xmpp: null,
@@ -21,6 +22,8 @@ export const XmppProvider = ({ children }) => {
     const [myPresence, setMyPresence] = useState('');
     const [contactStatus, setContactStatus] = useState({});
     const [grupalInvitations, setGrupalInvitations] = useState([]);
+    const [error, setError] = useState("");
+    const router = useRouter();
 
 
     useEffect(() => {
@@ -91,12 +94,16 @@ export const XmppProvider = ({ children }) => {
             setGrupalInvitations(prev => prev.filter(invitation => invitation !== roomJid));
         }
         );
+        service.on('errorconnecting', () => {
+            setError('Usuario o contraseña incorrectos');
+        });
         service.on('invitationAccepted', (jid) => {
             setInvitations(prev => prev.filter(invitation => invitation !== jid));
         });
         service.on('online', () => {
             console.log('Connected as: ', username);
             setAlreadyLogged(true);
+            router.push('/chat');
         });
         service.on('offline', () => {
             console.log('Disconnected');
@@ -107,8 +114,7 @@ export const XmppProvider = ({ children }) => {
         } );
         service.on('contactStatusUpdated', ({ from, status }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: status}));
-        } );
-    
+        } );    
 
         setXmpp(service);
         service.connect(username, password);
@@ -143,8 +149,20 @@ export const XmppProvider = ({ children }) => {
 
 
     return (
-        <XmppContext.Provider value={{ xmpp, roster, invitations, login, register,logout, alreadyLogged, conversationsUpdate, myPresence, contactStatus, grupalInvitations, grupalConversations }}>
-            {children}
+        <XmppContext.Provider value={{ xmpp,
+        roster,
+        invitations,
+        login,
+        register,
+        logout,
+        alreadyLogged,
+        conversationsUpdate,
+        myPresence,
+        contactStatus,
+        grupalInvitations,
+        error,
+        grupalConversations }}>
+        {children}
         </XmppContext.Provider>
     );
 };

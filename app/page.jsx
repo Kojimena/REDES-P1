@@ -8,14 +8,12 @@ import { useXmpp } from '@/contexts/xmppContext'
 export default function Home() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter();
-  const { login } = useXmpp();
+  const { login, error } = useXmpp();
 
   const handleLogin = async () => {
     try {
       login(username.split('@')[0], password);
       handleRememberMe();
-      router.push('/chat');
     } catch (error) {
       console.error('Error logging in:', error);
     }
@@ -92,9 +90,15 @@ export default function Home() {
                   <a href="/signup" className="label-text-alt link link-hover text-black">Don&apos;t have an account?</a>
                 </label>
               </div>
+              { error && 
+              <div className="text-red-500 text-sm">
+                {error}
+              </div>
+              }
               <div className="form-control mt-6">
               <Button
                 variant="contained"
+                className='btn bg-black text-white'
                 color="primary"
                 onClick={handleLogin}
               >
