@@ -81,21 +81,57 @@ class XmppService extends EventEmitter{
         console.log('📩 IQ result:', stanza.toString());
         this.handleRoster(stanza);
 
-      } else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query') && stanza.getChild('query').attrs.xmlns === 'jabber:iq:roster') {
+    } else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query') && stanza.getChild('query').attrs.xmlns === 'jabber:iq:roster') {
         console.log('📩 Rosterrrrrrrrrr:', stanza.toString());
 
-      } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
+    } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
             const from = stanza.attrs.from;
             console.log('📩 Subscription request from:', from);
             this.emit('invitationReceived', from);
 
-      } else if (stanza.is('presence') && stanza.getChild('status') && stanza.attrs.from !== this.xmpp.options.jid) {
+    } else if (stanza.is('presence') && stanza.getChild('status') && stanza.attrs.from !== this.xmpp.options.jid) {
         const from = stanza.attrs.from;
         const status = stanza.getChild('status').text();
         console.log('👾 Presence from', from, ':', status);
         this.emit('contactStatusUpdated', { from, status });
+    }else if (stanza.is('presence')) {
+      const from = stanza.attrs.from.split('/')[0];
+      const type = stanza.attrs.type;
+      const show = stanza.getChildText('show');
+      const status = stanza.getChildText('status');
+         
+      if (type === 'unavailable') {
+          console.log(`Usuario ${from} está offline`);
+          this.emit('notificationReceived', 'User ' + from + ' is offline');
+      } else {
+        if (show) {
+            console.log(`Usuario ${from} está ${show}`);
+            switch (show) {
+                case 'chat':
+                    this.emit('notificationReceived', 'User ' + from + ' is online');
+                    break;
+                case 'away':
+                    this.emit('notificationReceived', 'User ' + from + ' is away');
+                    break;
+                case 'dnd':
+                    this.emit('notificationReceived', 'User ' + from + ' is busy');
+                    break;
+                case 'xa':
+                    this.emit('notificationReceived', 'User ' + from + ' is away for an extended period');
+                    break;
+                default:
+                    break;
+            }
 
-      }else if (stanza.is('message') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
+        }
+        if (status) {
+            console.log(`Usuario ${from} está ${status}`);
+            this.emit('notificationReceived', 'User ' + from + ' is ' + status);
+        }
+      }
+
+            
+    }else if (stanza.is('message') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
               const invite = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('invite');
               if (invite) {
                   const from = invite.attrs.from;
@@ -103,7 +139,7 @@ class XmppService extends EventEmitter{
                   console.log(`Invitación recibida de ${from} para unirse a ${roomJid}`);
                   this.emit('roomInvitationReceived',roomJid);
               }
-      } else if  (stanza.is('presence') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
+    } else if  (stanza.is('presence') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
         const item = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('item');
         const status = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChildren('status');
         if (item.attrs.affiliation === 'member' && item.attrs.role === 'participant') {
@@ -111,7 +147,7 @@ class XmppService extends EventEmitter{
             console.log(`Unido a la sala: ${roomJid}`);
             this.emit('roomJoined',roomJid);
         }
-      } else if (stanza.is('message') && stanza.getChild('event', 'http://jabber.org/protocol/pubsub#event')) {
+    } else if (stanza.is('message') && stanza.getChild('event', 'http://jabber.org/protocol/pubsub#event')) {
         const eventElement = stanza.getChild('event', 'http://jabber.org/protocol/pubsub#event');
           const items = eventElement.getChild('items');
           if (items && items.attrs.node === 'storage:bookmarks') {

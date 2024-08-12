@@ -23,6 +23,7 @@ export const XmppProvider = ({ children }) => {
     const [contactStatus, setContactStatus] = useState({});
     const [grupalInvitations, setGrupalInvitations] = useState([]);
     const [error, setError] = useState("");
+    const [notification, setNotification] = useState([]);
     const router = useRouter();
 
 
@@ -114,8 +115,12 @@ export const XmppProvider = ({ children }) => {
         } );
         service.on('contactStatusUpdated', ({ from, status }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: status}));
-        } );    
-
+            setNotification(prev => [...prev, "User " + from.split('/')[0] + " is now " + status ]);
+        } );  
+        service.on('notificationReceived', (message) => {
+            setNotification(prev => [...prev, message]);
+        }
+        );
         setXmpp(service);
         service.connect(username, password);
         setAlreadyLogged(true);
@@ -161,6 +166,7 @@ export const XmppProvider = ({ children }) => {
         contactStatus,
         grupalInvitations,
         error,
+        notification,
         grupalConversations }}>
         {children}
         </XmppContext.Provider>

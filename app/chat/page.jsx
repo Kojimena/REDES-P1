@@ -12,7 +12,9 @@ import { CgProfile } from "react-icons/cg"
 import ProfilePopup from '@/components/ProfilePopup/ProfilePopup'
 import ContactPopup from '@/components/ContactPopup/ContactPopup'
 import { AiTwotoneDelete } from "react-icons/ai"
-import FileUploader from '@/components/FileUploader/FileUploader';
+import FileUploader from '@/components/FileUploader/FileUploader'
+import { IoNotifications } from "react-icons/io5"
+import NotificationsPopUp from '@/components/NotificationsPopUp/NotificationsPopUp';
 
 
 
@@ -21,7 +23,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations, notification } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -41,7 +43,8 @@ const Chat = () => {
 
     const [joinChannel, setJoinChannel] = useState(false);
     const [nickname, setNickname] = useState('');
-    const[selectedChannel, setSelectedChannel] = useState(null);
+
+    const [showNotification, setShowNotification] = useState(false);
 
 
     /*chats*/
@@ -201,10 +204,12 @@ const Chat = () => {
     const onhandleChannel = () => {
         setShowChannelMessages(!showChannelMessages);
     }
-        
 
+    /*notifications*/
 
-
+    const handleNotification = () => {
+        setShowNotification(!showNotification);
+    }
 
     useEffect(() => {
         // Intentar restaurar la sesión al cargar el componente si está marcado para reconectar
@@ -232,6 +237,7 @@ const Chat = () => {
             <div className='absolute top-0 right-0 m-4 flex gap-4'>
                 <CgProfile className='text-black text-2xl cursor-pointer' onClick={handleProfilePopup} />
                 <FaUserFriends className='text-black text-2xl cursor-pointer' onClick={handleViewContacts} />
+                <IoNotifications className='text-black text-2xl cursor-pointer' onClick={handleNotification} />
                 <RiLogoutCircleRLine className='text-black text-2xl cursor-pointer' onClick={handleLogout} />
             </div>
             <div className="mockup-code text-white w-full h-[98%] flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
@@ -395,6 +401,11 @@ const Chat = () => {
             {
                 profilePopup && (
                     <ProfilePopup presence={myPresence} xmpp={xmpp} />
+                )
+            }
+            {
+                showNotification && (
+                    <NotificationsPopUp notifications={notification} />
                 )
             }
         </div>
