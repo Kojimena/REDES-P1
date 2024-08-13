@@ -87,6 +87,7 @@ export const XmppProvider = ({ children }) => {
         });
         service.on('invitationReceived', (jid) => {
             setInvitations(prev => [...prev, jid]); 
+            setNotification(prev => [...prev, "Invitation received from " + jid + ",check your invitations."]);
         });
         service.on('roomInvitationReceived', (roomJid) => {
             setGrupalInvitations(prev => [...prev, roomJid]);
@@ -100,6 +101,7 @@ export const XmppProvider = ({ children }) => {
         });
         service.on('invitationAccepted', (jid) => {
             setInvitations(prev => prev.filter(invitation => invitation !== jid));
+            setNotification(prev => [...prev, "User:" + jid + ", now can see your presence."]);
         });
         service.on('online', () => {
             console.log('Connected as: ', username);
@@ -113,9 +115,9 @@ export const XmppProvider = ({ children }) => {
         service.on('presenceUpdated', (presence) => {
             setMyPresence(presence);
         } );
-        service.on('contactStatusUpdated', ({ from, status }) => {
+        service.on('contactStatusUpdated', ({ from, status, show }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: status}));
-            setNotification(prev => [...prev, "User " + from.split('/')[0] + " is now " + status ]);
+            setNotification(prev => [...prev, "User " + from.split('/')[0] + ", status:" + status +  ", show:" + show]);
         } );  
         service.on('notificationReceived', (message) => {
             setNotification(prev => [...prev, message]);

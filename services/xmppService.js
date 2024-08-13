@@ -83,6 +83,14 @@ class XmppService extends EventEmitter{
 
     } else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query') && stanza.getChild('query').attrs.xmlns === 'jabber:iq:roster') {
         console.log('📩 Rosterrrrrrrrrr:', stanza.toString());
+        const item = stanza.getChild('query').getChild('item');
+        const jid = item.attrs.jid;
+        const subscription = item.attrs.subscription;
+        switch (subscription) {
+            case 'none':
+              this.emit('notificationReceived', jid + ' has removed you from their contacts');
+              break;
+        }
 
     } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
             const from = stanza.attrs.from;
@@ -92,45 +100,32 @@ class XmppService extends EventEmitter{
     } else if (stanza.is('presence') && stanza.getChild('status') && stanza.attrs.from !== this.xmpp.options.jid) {
         const from = stanza.attrs.from;
         const status = stanza.getChild('status').text();
+        const show = stanza.getChild('show') ? stanza.getChild('show').text() : 'Available';
         console.log('👾 Presence from', from, ':', status);
-        this.emit('contactStatusUpdated', { from, status });
-    }else if (stanza.is('presence')) {
-      const from = stanza.attrs.from.split('/')[0];
-      const type = stanza.attrs.type;
-      const show = stanza.getChildText('show');
-      const status = stanza.getChildText('status');
-         
-      if (type === 'unavailable') {
-          console.log(`Usuario ${from} está offline`);
-          this.emit('notificationReceived', 'User ' + from + ' is offline');
-      } else {
-        if (show) {
-            console.log(`Usuario ${from} está ${show}`);
-            switch (show) {
-                case 'chat':
-                    this.emit('notificationReceived', 'User ' + from + ' is online');
-                    break;
-                case 'away':
-                    this.emit('notificationReceived', 'User ' + from + ' is away');
-                    break;
-                case 'dnd':
-                    this.emit('notificationReceived', 'User ' + from + ' is busy');
-                    break;
-                case 'xa':
-                    this.emit('notificationReceived', 'User ' + from + ' is away for an extended period');
-                    break;
-                default:
-                    break;
-            }
-
+        if (from.split('@')[0] !== this.xmpp.options.username) {
+          switch (show) {
+            case 'chat':
+              this.emit('contactStatusUpdated', { from, status, show: 'Available for chat' });
+              this.emit('notificationReceived', 'User ' + from + ' is Available for chat');
+              break;
+            case 'away':
+              this.emit('contactStatusUpdated', { from, status, show: 'Away' });
+              this.emit('notificationReceived', 'User ' + from + ' is away');
+              break;
+            case 'dnd':
+              this.emit('contactStatusUpdated', { from, status, show: 'Do not disturb' });
+              this.emit('notificationReceived', 'User ' + from + ' is busy');
+              break;
+            case 'xa':
+              this.emit('contactStatusUpdated', { from, status, show: 'Extended away' });
+              this.emit('notificationReceived', 'User ' + from + ' is away for an extended period');
+              break;
+            default:
+              this.emit('contactStatusUpdated', { from, status, show: 'Available' });
+              this.emit('notificationReceived', 'User ' + from + ' is online');
+              break;
+          }
         }
-        if (status) {
-            console.log(`Usuario ${from} está ${status}`);
-            this.emit('notificationReceived', 'User ' + from + ' is ' + status);
-        }
-      }
-
-            
     }else if (stanza.is('message') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
               const invite = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('invite');
               if (invite) {
@@ -303,6 +298,48 @@ class XmppService extends EventEmitter{
     }
   }
 
+  async retrieveArchivedMessages(jid, max = 10) {
+    const queryId = 'mam_' + new Date().getTime();
+    try {
+      const mamQuery = xml('iq', { type: 'set', id: queryId },
+        xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: queryId },
+          xml('x', { xmlns: 'jabber:x:data', type: 'submit' },
+            xml('field', { var: 'FORM_TYPE', type: 'hidden' },
+              xml('value', {}, 'urn:xmpp:mam:2')
+            ),
+            xml('field', { var: 'with' },
+              xml('value', {}, jid.split('/')[0])
+            )
+          ),
+          xml('set', { xmlns: 'http://jabber.org/protocol/rsm' },
+            xml('max', {}, max.toString())
+          )
+        )
+      );
+      const response = await this.xmpp.iqCaller.request(mamQuery);
+      this.processMAMResponse(response);
+      console.log('MAM query sent:', mamQuery.toString());
+    } catch (err) {
+      console.error('Error retrieving archived messages:', err.toString());
+    }
+  }
+
+  async processMAMResponse(response) {
+    console.log('MAM response:', response.toString());
+    const results = response.getChildrenByFilter(child => child.is('result', 'urn:xmpp:mam:2'));
+    results.forEach(result => {
+        const forwarded = result.getChild('forwarded', 'urn:xmpp:forward:0');
+        if (forwarded) {
+            const message = forwarded.getChild('message', 'jabber:client');
+            const body = message.getChild('body').text();
+            const from = message.attrs.from;
+            console.log(`Recovered message from ${from}: ${body}`);
+        }
+    });
+  }
+  
+  
+
   sendMessageToRoom(roomJid, message) {
     try {
       const stanza = xml('message', {to: roomJid, type: 'groupchat'}, xml('body', {}, message));
@@ -348,6 +385,7 @@ class XmppService extends EventEmitter{
       const stanza = xml('presence', { to: jid, type: 'subscribe' });
       await this.xmpp.send(stanza);
       console.log('Subscription request sent to:', jid);
+      this.emit('notificationReceived', 'Subscription request sent to ' + jid);
     } catch (err) {
       console.error('❌ Subscription request error:', err.toString());
     }
