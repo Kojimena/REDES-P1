@@ -24,7 +24,9 @@ export const XmppProvider = ({ children }) => {
     const [grupalInvitations, setGrupalInvitations] = useState([]);
     const [error, setError] = useState("");
     const [notification, setNotification] = useState([]);
+    const [historyConversations, setHistoryConversations] = useState({});
     const router = useRouter();
+
 
 
     useEffect(() => {
@@ -38,15 +40,35 @@ export const XmppProvider = ({ children }) => {
                 setGrupalConversations(prev => ({ ...prev, ...conversations }));
             };
 
+            const handleInvitationReceived = (jid) => {
+                if (!invitations.includes(jid)) {
+                    setInvitations(prev => [...prev, jid]);
+                }
+                const message = `Invitation received from ${jid}, check your invitations.`;
+                if (!notification.includes(message)) {
+                    setNotification(prev => [...prev, message]);
+                }
+            };
+
+            const handleNotificationReceived = (message) => {
+                if (!notification.includes(message)) {
+                    setNotification(prev => [...prev, message]);
+                }
+            };
+
             xmpp.on('messageReceived', handleMessages);
             xmpp.on('groupMessageReceived', handleGrupalMessages);
+            xmpp.on('invitationReceived', handleInvitationReceived);
+            xmpp.on('notificationReceived', handleNotificationReceived);
 
             return () => {
                 xmpp.off('messageReceived', handleMessages);
                 xmpp.off('groupMessageReceived', handleGrupalMessages);
+                xmpp.off('invitationReceived', handleInvitationReceived);
+                xmpp.off('notificationReceived', handleNotificationReceived);
             };
         }
-    }, [xmpp]);
+    }, [xmpp, invitations, notification]);
 
 
     useEffect(() => {
@@ -85,10 +107,6 @@ export const XmppProvider = ({ children }) => {
         service.on('rosterUpdated', updatedRoster => {
             setRoster(updatedRoster);
         });
-        service.on('invitationReceived', (jid) => {
-            setInvitations(prev => [...prev, jid]); 
-            setNotification(prev => [...prev, "Invitation received from " + jid + ",check your invitations."]);
-        });
         service.on('roomInvitationReceived', (roomJid) => {
             setGrupalInvitations(prev => [...prev, roomJid]);
         });
@@ -116,11 +134,11 @@ export const XmppProvider = ({ children }) => {
             setMyPresence(presence);
         } );
         service.on('contactStatusUpdated', ({ from, status, show }) => {
-            setContactStatus(prev => ({...prev, [from.split('/')[0]]: status}));
-            setNotification(prev => [...prev, "User " + from.split('/')[0] + ", status:" + status +  ", show:" + show]);
+            setContactStatus(prev => ({...prev, [from.split('/')[0]]: {status, show}}));
         } );  
-        service.on('notificationReceived', (message) => {
-            setNotification(prev => [...prev, message]);
+        service.on('historyReceived', (history) => {
+            setHistoryConversations(history);
+            console.log('History received');
         }
         );
         setXmpp(service);
@@ -154,6 +172,15 @@ export const XmppProvider = ({ children }) => {
         setAlreadyLogged(false);
     }
 
+    const clearHistory = () => {
+        xmpp.clearHistory();
+        setHistoryConversations({});
+    }
+
+    const clearNotification = () => {
+        setNotification([]);
+    }
+
 
     return (
         <XmppContext.Provider value={{ xmpp,
@@ -169,6 +196,9 @@ export const XmppProvider = ({ children }) => {
         grupalInvitations,
         error,
         notification,
+        historyConversations,
+        clearHistory,
+        clearNotification,
         grupalConversations }}>
         {children}
         </XmppContext.Provider>

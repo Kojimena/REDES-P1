@@ -23,7 +23,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations, notification } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations, notification, historyConversations, clearHistory } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -55,11 +55,18 @@ const Chat = () => {
     const handleSelectContact = (contact) => {
         console.log("Selected contact: ", contact);
         setSelectedContact(contact);
+        clearHistory();
+        //timeout to get the history
+        setTimeout(() => {
+            xmpp.retrieveArchivedMessages(contact);
+        }, 1000);
     };
 
     const renderMessages = (contact) => {
         const messages = conversations[contact];
-        if (selectedContact === contact && !contact.includes('@conference')) {
+        const history = historyConversations;
+        console.log('History: ', history);
+        if (selectedContact === contact && !contact.includes('@conference') && messages) {
             return messages.map((message, index) => (
                 <div className='flex w-full items-center p-2' key={index}>
                     {
@@ -118,9 +125,25 @@ const Chat = () => {
                         )
                     }
                 </div>
-
+            ));
+        } else if (selectedContact === contact && history) {
+            console.log('History: ', history);
+            return Object.keys(history).map((contact, index) => (
+                <div className='flex flex-col w-full items-center p-2' key={index}>
+                    {
+                        history[contact].map((message, index) => (
+                            <div className={`w-full ${contact.split('@')[0] === xmpp.username ? 'flex justify-end flex-row-reverse' : 'flex'}`} key={index}>
+                                <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                                    <span className='text-white text-sm font-semibold uppercase'>{contact[0]}</span>
+                                </div>
+                                <ChatBubble  message={message} type={contact.split('@')[0] === xmpp.username ? 'sent' : 'received'} />
+                            </div>
+                        ))
+                    }
+                </div>
             ));
         }
+
         return null;  // null when not selected to prevent rendering in contact list
     };
     
@@ -333,7 +356,10 @@ const Chat = () => {
                     }
                 </div>
                 <div className='glassmorphism shadow-2xl text-black p-10 rounded-md m-4 md:w-3/4 h-full md:h-[98%] md:m-4 md:p-0 relative'>
-                    <div className='h-[96%] overflow-y-auto'>
+                    <span className='text-md p-4 font-poppins text-black flex justify-center items-center font-semibold'>
+                        Chat with {selectedContact}
+                    </span>
+                    <div className='h-[88%] overflow-y-auto'>
                         {selectedContact && renderMessages(selectedContact)}
                     </div>
                     <div className='fixed bottom-0 w-full flex justify-end'>
@@ -392,12 +418,18 @@ const Chat = () => {
                         </button>
                         {
                             roster.map(contact => (
-                                <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact}>
+                                <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact} onClick={() => handleSelectContact(contact)}>
                                     <div className='flex items-center'>
                                         <div className='h-8 w-8 bg-black rounded-full'></div>
                                         <div className='ml-2 flex flex-col'>
                                             <span className='font-medium text-black'>{contact}</span>
-                                            <span>status: {contactStatus[contact] ? contactStatus[contact] : 'offline'} </span>
+                                            <span>
+                                                 {contactStatus[contact] ? `status: (${contactStatus[contact].status})` : 'status: ()'}
+                                            </span>
+                                            <span>
+                                                presence:{contactStatus[contact] && contactStatus[contact].show ? ` (${contactStatus[contact].show})` : 'offline'}
+                                            </span>
+
                                         </div>
                                         <AiTwotoneDelete className='text-red-700 text-2xl cursor-pointer absolute right-10' onClick={() => xmpp.removeContact(contact)} />
                                     </div>

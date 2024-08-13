@@ -16,6 +16,7 @@ class XmppService extends EventEmitter{
     this.conversations = {};
     this.presence = '';
     this.groupConversations = {};
+    this.history_messages = {};
 
 
     this.xmpp = client({
@@ -97,12 +98,12 @@ class XmppService extends EventEmitter{
             console.log('📩 Subscription request from:', from);
             this.emit('invitationReceived', from);
 
-    } else if (stanza.is('presence') && stanza.getChild('status') && stanza.attrs.from !== this.xmpp.options.jid) {
+    } else if (stanza.is('presence') && stanza.attrs.from !== this.xmpp.options.jid) {
         const from = stanza.attrs.from;
-        const status = stanza.getChild('status').text();
+        const status = stanza.getChild('status')? stanza.getChild('status').text() : '';
         const show = stanza.getChild('show') ? stanza.getChild('show').text() : 'Available';
         console.log('👾 Presence from', from, ':', status);
-        if (from.split('@')[0] !== this.xmpp.options.username) {
+        if (from.split('@')[0] !== this.xmpp.options.username && !from.includes('conference')) {
           switch (show) {
             case 'chat':
               this.emit('contactStatusUpdated', { from, status, show: 'Available for chat' });
@@ -161,7 +162,19 @@ class XmppService extends EventEmitter{
                   }
               }
           }
-      } 
+      }  else if (stanza.is('message') && stanza.getChild('result', 'urn:xmpp:mam:2') && stanza.getChild('result', 'urn:xmpp:mam:2').attrs.queryid === 'mam_query_1') {
+        console.log('📩 MAM query response:', stanza.toString());
+        const result = stanza.getChild('result', 'urn:xmpp:mam:2');
+        const forwarded = result.getChild('forwarded', 'urn:xmpp:forward:0');
+        if (forwarded) {
+            const message = forwarded.getChild('message', 'jabber:client');
+            const body = message.getChild('body').text();
+            const from = message.attrs.from;
+            console.log('📩 Archived message from', from, ':', body);
+            this.history_messages[from] = this.history_messages[from] ? [...this.history_messages[from], body] : [body];
+            this.emit('historyReceived', this.history_messages);
+        }
+    }
       else {
         console.log('----:', stanza.toString());
       }
@@ -298,8 +311,8 @@ class XmppService extends EventEmitter{
     }
   }
 
-  async retrieveArchivedMessages(jid, max = 10) {
-    const queryId = 'mam_' + new Date().getTime();
+  async retrieveArchivedMessages(jid, max = 40) {
+    const queryId = 'mam_query_1';
     try {
       const mamQuery = xml('iq', { type: 'set', id: queryId },
         xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: queryId },
@@ -317,25 +330,11 @@ class XmppService extends EventEmitter{
         )
       );
       const response = await this.xmpp.iqCaller.request(mamQuery);
-      this.processMAMResponse(response);
+      console.log('MAM query response:', response.toString());
       console.log('MAM query sent:', mamQuery.toString());
     } catch (err) {
       console.error('Error retrieving archived messages:', err.toString());
     }
-  }
-
-  async processMAMResponse(response) {
-    console.log('MAM response:', response.toString());
-    const results = response.getChildrenByFilter(child => child.is('result', 'urn:xmpp:mam:2'));
-    results.forEach(result => {
-        const forwarded = result.getChild('forwarded', 'urn:xmpp:forward:0');
-        if (forwarded) {
-            const message = forwarded.getChild('message', 'jabber:client');
-            const body = message.getChild('body').text();
-            const from = message.attrs.from;
-            console.log(`Recovered message from ${from}: ${body}`);
-        }
-    });
   }
   
   
@@ -409,6 +408,11 @@ class XmppService extends EventEmitter{
     if (autojoin) {
         this.joinRoom(jid, this.xmpp.options.username);
     }
+  }
+
+  clearHistory() {
+    this.history_messages = {};
+    this.emit('historyReceived', this.history_messages);
   }
 
   async disconnect() {
