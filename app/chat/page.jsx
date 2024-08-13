@@ -165,12 +165,17 @@ const Chat = () => {
         setPrivateMessage(event.target.value);
     }
 
-    const handleSendPrivateMessage = ({to, message}) => {
-            console.log('Sending message to user');
-                xmpp.sendMessage(to, message);
-                console.log(conversations)
-                setPrivateMessage('');
-    }
+    const handleSendPrivateMessage = ({ to, message }) => {
+        console.log('Sending message to user', to, message);
+        xmpp.sendMessage(to, message);
+        const newMessage = `Me: ${message}`;
+        setConversations(prev => ({
+            ...prev,
+            [to]: [...(prev[to] || []), newMessage]
+        }));
+        setPrivateMessage('');
+    };
+    
 
     const handleSendGroupMessage = ({to, message}) => {
         console.log('Sending sendMessageToRoom', to, message);

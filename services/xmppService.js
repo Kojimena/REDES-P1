@@ -74,7 +74,8 @@ class XmppService extends EventEmitter{
           console.log('📩 Group Conversations:', this.groupConversations);
           this.emit('groupMessageReceived', this.groupConversations);
         } else {
-            this.conversations[from] = this.conversations[from] ? [...this.conversations[from], body] : [body];
+          const fromJid = from.split('/')[0];
+            this.conversations[fromJid] = this.conversations[fromJid] ? [...this.conversations[fromJid], body] : [body];
             console.log('📩 Conversations:', this.conversations);
             this.emit('messageReceived', this.conversations);
         }
