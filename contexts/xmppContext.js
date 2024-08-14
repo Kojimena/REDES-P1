@@ -24,17 +24,34 @@ export const XmppProvider = ({ children }) => {
     const [grupalInvitations, setGrupalInvitations] = useState([]);
     const [error, setError] = useState("");
     const [notification, setNotification] = useState([]);
-    const [historyConversations, setHistoryConversations] = useState({});
     const router = useRouter();
 
 
 
     useEffect(() => {
         if (xmpp) {
-            // Suscribirse a los eventos solo cuando xmpp está configurado
             const handleMessages = (conversations) => {
-                setConversationsUpdate(prev => ({ ...prev, ...conversations }));
+                setConversationsUpdate(prev => {
+                    console.log('Conversaciones previas:', prev);
+                    console.log('Nuevas conversaciones:', conversations);
+            
+                    const updatedConversations = { ...prev };
+            
+                    for (const [user, messages] of Object.entries(conversations)) {
+                        if (!updatedConversations[user]) {
+                            updatedConversations[user] = [];
+                        }
+            
+                        const existingTimestamps = new Set(updatedConversations[user].map(msg => msg.timestamp));
+                        const newMessages = messages.filter(msg => !existingTimestamps.has(msg.timestamp));
+                        updatedConversations[user] = [...updatedConversations[user], ...newMessages].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                    }
+            
+                    console.log('Conversaciones actualizadas:', updatedConversations);
+                    return updatedConversations;
+                });
             };
+                      
 
             const handleGrupalMessages = (conversations) => {
                 setGrupalConversations(prev => ({ ...prev, ...conversations }));
@@ -68,7 +85,7 @@ export const XmppProvider = ({ children }) => {
                 xmpp.off('notificationReceived', handleNotificationReceived);
             };
         }
-    }, [xmpp, invitations, notification]);
+    }, [xmpp]);
 
 
     useEffect(() => {
@@ -136,11 +153,6 @@ export const XmppProvider = ({ children }) => {
         service.on('contactStatusUpdated', ({ from, status, show }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: {status, show}}));
         } );  
-        service.on('historyReceived', (history) => {
-            setHistoryConversations(history);
-            console.log('History received');
-        }
-        );
         setXmpp(service);
         service.connect(username, password);
         setAlreadyLogged(true);
@@ -172,11 +184,6 @@ export const XmppProvider = ({ children }) => {
         setAlreadyLogged(false);
     }
 
-    const clearHistory = () => {
-        xmpp.clearHistory();
-        setHistoryConversations({});
-    }
-
     const clearNotification = () => {
         setNotification([]);
     }
@@ -196,8 +203,6 @@ export const XmppProvider = ({ children }) => {
         grupalInvitations,
         error,
         notification,
-        historyConversations,
-        clearHistory,
         clearNotification,
         grupalConversations }}>
         {children}

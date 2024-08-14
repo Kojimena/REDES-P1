@@ -23,7 +23,7 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations, notification, historyConversations, clearHistory } = useXmpp();
+    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations, notification } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -33,7 +33,6 @@ const Chat = () => {
     const [showPopupMessage, setShowPopupMessage] = useState(false);
     const rout = useRouter();
 
-    const [conversations, setConversations] = useState({});
     const [selectedContact, setSelectedContact] = useState(null);
 
 
@@ -48,50 +47,46 @@ const Chat = () => {
 
 
     /*chats*/
-    useEffect(() => {
-        setConversations(conversationsUpdate);
-    }, [conversationsUpdate]);
+    
+
 
     const handleSelectContact = (contact) => {
         console.log("Selected contact: ", contact);
-        setSelectedContact(contact);
-        clearHistory();
-        //timeout to get the history
-        setTimeout(() => {
-            xmpp.retrieveArchivedMessages(contact);
-        }, 1000);
+        if (selectedContact !== contact) {
+            setSelectedContact(contact);
+            setTimeout(() => {
+                xmpp.retrieveArchivedMessages(contact);
+            }, 1000);
+        }
     };
 
     const renderMessages = (contact) => {
-        const messages = conversations[contact];
-        const history = historyConversations;
-        console.log('History: ', history);
-        if (selectedContact === contact && !contact.includes('@conference') && messages) {
-            return messages.map((message, index) => (
+        console.log('Contact-------', contact);
+        console.log('Messages-------', conversationsUpdate);
+        const messages = conversationsUpdate[contact];
+         if (selectedContact === contact && !contact.includes('@conference') && messages) {
+            return messages.map((messageObj, index) => (
                 <div className='flex w-full items-center p-2' key={index}>
-                    {
-                        message.includes('Me: ') ? (
-                            <div className='flex justify-end w-full'>
-                                <ChatBubble message={message.split('Me: ')[1]} type='sent' />
-                                <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
-                                    <span className='text-white text-sm font-semibold uppercase'>Me</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className='flex'>
-                            <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
-                                <span className='text-white text-sm font-semibold uppercase'>{contact[0]}</span>
-                            </div>
-                            <ChatBubble  message={message} type='received' />
-                            </div>
-                        )
-                    }
-
+                  {
+                    messageObj.sender.includes(xmpp.username) ? (
+                      <div className='flex justify-end w-full'>
+                        <ChatBubble message={messageObj.message} type='sent' timestamp={messageObj.timestamp.split('T')[0]} />
+                        <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                          <span className='text-white text-sm font-semibold uppercase'>{messageObj.sender[0]}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className='flex'>
+                        <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
+                          <span className='text-white text-sm font-semibold uppercase'>{messageObj.sender[0]}</span>
+                        </div>
+                        <ChatBubble message={messageObj.message} type='received' timestamp={messageObj.timestamp.split('T')[0]} />
+                      </div>
+                    )
+                  }
                 </div>
-
-            ));
-        }
-        else if (selectedContact === contact && contact.includes('@conference')) {
+              ));
+        } else if (selectedContact === contact && contact.includes('@conference')) {
             return grupalConversations[contact].map((messageObj, index) => (
                 <div className='flex w-full items-center p-2' key={index}>
                     {
@@ -106,7 +101,7 @@ const Chat = () => {
                                     )
                                 }
                                 <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
-                                    <span className='text-white text-sm font-semibold uppercase'>Me</span>
+                                    <span className='text-white text-sm font-semibold uppercase'>{messageObj.sender[0]}</span>
                                 </div>
                             </div>
                         ) : (
@@ -123,22 +118,6 @@ const Chat = () => {
                             }
                             </div>
                         )
-                    }
-                </div>
-            ));
-        } else if (selectedContact === contact && history) {
-            console.log('History: ', history);
-            return Object.keys(history).map((contact, index) => (
-                <div className='flex flex-col w-full items-center p-2' key={index}>
-                    {
-                        history[contact].map((message, index) => (
-                            <div className={`w-full ${contact.split('@')[0] === xmpp.username ? 'flex justify-end flex-row-reverse' : 'flex'}`} key={index}>
-                                <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
-                                    <span className='text-white text-sm font-semibold uppercase'>{contact[0]}</span>
-                                </div>
-                                <ChatBubble  message={message} type={contact.split('@')[0] === xmpp.username ? 'sent' : 'received'} />
-                            </div>
-                        ))
                     }
                 </div>
             ));
@@ -168,11 +147,6 @@ const Chat = () => {
     const handleSendPrivateMessage = ({ to, message }) => {
         console.log('Sending message to user', to, message);
         xmpp.sendMessage(to, message);
-        const newMessage = `Me: ${message}`;
-        setConversations(prev => ({
-            ...prev,
-            [to]: [...(prev[to] || []), newMessage]
-        }));
         setPrivateMessage('');
     };
     
@@ -334,11 +308,13 @@ const Chat = () => {
                             </button>
                         </div>
                     </span>
-                    {showPrivateMessages && Object.keys(conversations).map(contact => (
-                            <div className='flex items-start justify-center flex-col bg-white p-2 mb-2 rounded-xl' key={contact} onClick={() => handleSelectContact(contact)}>
-                                <span className='font-bold text-sm'>{contact.split('@')[0]}</span>
-                                <span className='text-xs truncate w-3/4'>{conversations[contact][conversations[contact].length - 1]}</span>
-                            </div>
+                    {showPrivateMessages && Object.keys(conversationsUpdate).map(contact => (
+                        <div className='flex items-start justify-center flex-col bg-white p-2 mb-2 rounded-xl' key={contact} onClick={() => handleSelectContact(contact)}>
+                            <span className='font-bold text-sm'>{contact.split('@')[0]}</span>
+                            <span className='text-xs truncate w-3/4'>
+                            {conversationsUpdate[contact].length > 0 ? conversationsUpdate[contact][conversationsUpdate[contact].length - 1].message : ''}
+                            </span>
+                        </div>
                     ))}
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Channels

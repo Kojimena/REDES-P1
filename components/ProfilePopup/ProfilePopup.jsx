@@ -29,7 +29,7 @@ const ProfilePopup = ({presence, xmpp}) => {
             showPopup && (
                 <div className="flex flex-col gap-4 mt-4">
                     <input type="text" placeholder="Status" className="input input-bordered bg-white text-black" onChange={(e) => setStatus(e.target.value)} />
-                    <button className="btn bg-black text-white p-0" onClick={() => onChangeStatus(status)}>Change presence</button>
+                    <button className="btn bg-black text-white p-0" onClick={() => onChangeStatus(status)}>Change status</button>
                 </div>
             )
         }
