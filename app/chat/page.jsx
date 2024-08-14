@@ -23,7 +23,17 @@ const Chat = () => {
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
-    const { xmpp, invitations, logout, alreadyLogged, conversationsUpdate, roster, myPresence, contactStatus, login, grupalInvitations, grupalConversations, notification } = useXmpp();
+    const { xmpp, 
+        invitations, 
+        logout, alreadyLogged, 
+        conversationsUpdate, 
+        roster, myPresence, 
+        contactStatus, 
+        login, 
+        grupalInvitations, 
+        grupalConversations, 
+        myStatus,
+        notification } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
@@ -423,7 +433,7 @@ const Chat = () => {
             }
             {
                 profilePopup && (
-                    <ProfilePopup presence={myPresence} xmpp={xmpp} />
+                    <ProfilePopup presence={myPresence} xmpp={xmpp} state={myStatus} />
                 )
             }
             {

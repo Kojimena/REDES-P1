@@ -20,6 +20,7 @@ export const XmppProvider = ({ children }) => {
     const [conversationsUpdate, setConversationsUpdate] = useState({});
     const [grupalConversations, setGrupalConversations] = useState({});
     const [myPresence, setMyPresence] = useState('');
+    const [myStatus, setMyStatus] = useState('');
     const [contactStatus, setContactStatus] = useState({});
     const [grupalInvitations, setGrupalInvitations] = useState([]);
     const [error, setError] = useState("");
@@ -150,6 +151,9 @@ export const XmppProvider = ({ children }) => {
         service.on('presenceUpdated', (presence) => {
             setMyPresence(presence);
         } );
+        service.on ('statusUpdated', (status) => {
+            setMyStatus(status);
+        } );
         service.on('contactStatusUpdated', ({ from, status, show }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: {status, show}}));
         } );  
@@ -199,6 +203,7 @@ export const XmppProvider = ({ children }) => {
         alreadyLogged,
         conversationsUpdate,
         myPresence,
+        myStatus,
         contactStatus,
         grupalInvitations,
         error,

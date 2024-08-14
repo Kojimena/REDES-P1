@@ -15,6 +15,7 @@ class XmppService extends EventEmitter{
     this.connecting = false;
     this.conversations = {};
     this.presence = '';
+    this.status = '';
     this.groupConversations = {};
     this.history_messages = {};
 
@@ -170,11 +171,9 @@ class XmppService extends EventEmitter{
             const from = message.attrs.from;
             const to = message.attrs.to;
             console.log('📩 Archived message from', from, ':', body);
-            console.log('📩 YOOO,',this.xmpp.options.username)
             const fromJid = from.split('/')[0];
             const toJid = to.split('/')[0];
             const timestamp = forwarded.getChild('delay', 'urn:xmpp:delay').attrs.stamp;
-            //si ya hay un mesaje con ese timestamp no lo agrega
             if (fromJid.includes(this.xmpp.options.username)) {
               this.conversations[toJid] = this.conversations[toJid] ? [...this.conversations[toJid],  { sender: fromJid, message: body, timestamp }] : [ { sender: fromJid, message: body, timestamp }];
               this.emit('messageReceived', this.conversations);
@@ -219,7 +218,9 @@ class XmppService extends EventEmitter{
   async updatePresence(show = '', status = '') {
     this.setPresence(show, status);
     this.presence = status;
+    this.status = show;
     this.emit('presenceUpdated', this.presence);
+    this.emit('statusUpdated', this.status);
   }
 
   async connect(jid, password) {
@@ -397,13 +398,18 @@ class XmppService extends EventEmitter{
     }
   }
 
+  /**
+   * Function to join a room
+   * @param {any} roomJid
+   * @param {any} nickname
+   * @returns {any}
+   */
   async joinRoom(roomJid, nickname) {
     const presence = xml('presence', {
         to: `${roomJid}/${nickname}`
     }, xml('x', { xmlns: 'http://jabber.org/protocol/muc' }));
     try {
         await this.xmpp.send(presence);
-        //console.log(`Unido a la sala: ${roomJid} como ${nickname}`);
         this.emit('roomJoined', roomJid);
     } catch (err) {
         console.error('Error al unirse a la sala:', err.toString());
@@ -411,7 +417,14 @@ class XmppService extends EventEmitter{
   }
 
 
-  saveBookmark(jid, nick, autojoin) {
+  /**
+   * Description
+   * @param {any} jid
+   * @param {any} nick
+   * @param {any} autojoin
+   * @returns {any}
+   */
+  saveBookmark(jid, autojoin) {
     if (autojoin) {
         this.joinRoom(jid, this.xmpp.options.username);
     }
