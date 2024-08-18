@@ -28,7 +28,6 @@ export const XmppProvider = ({ children }) => {
     const router = useRouter();
 
 
-
     useEffect(() => {
         if (xmpp) {
             const handleMessages = (conversations) => {
@@ -156,7 +155,7 @@ export const XmppProvider = ({ children }) => {
         } );
         service.on('contactStatusUpdated', ({ from, status, show }) => {
             setContactStatus(prev => ({...prev, [from.split('/')[0]]: {status, show}}));
-        } );  
+        } );
         setXmpp(service);
         service.connect(username, password);
         setAlreadyLogged(true);
@@ -170,12 +169,12 @@ export const XmppProvider = ({ children }) => {
      */
     const register = (username, password) => {
         const service = new XmppService("her21199", "nutella21");
+        service.connect("her21199", "nutella21");
         service.on('online', () => {
-            console.log('REGISTERED');
-
             service.register(username, password);
         });
-    };
+        setAlreadyLogged(true);
+    }
 
     /**
      * Function to logout from xmpp
