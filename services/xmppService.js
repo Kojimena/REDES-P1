@@ -18,6 +18,7 @@ class XmppService extends EventEmitter{
     this.status = '';
     this.groupConversations = {};
     this.history_messages = {};
+    this.domain = 'alumchat.lol';
 
 
     this.xmpp = client({
@@ -416,6 +417,62 @@ class XmppService extends EventEmitter{
     }
   }
 
+    /**
+   * Save group chat bookmark with autojoin option.
+   * @param {string} jid - The JID of the group chat to bookmark.
+   * @param {boolean} autojoin - Whether to join this chat automatically on login.
+   */
+  async savesBookmark(jid, autojoin) {
+    const iq = xml('iq', { type: 'set' },
+      xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
+        xml('publish', { node: 'storage:bookmarks' },
+          xml('item', { id: 'current' },
+            xml('storage', { xmlns: 'storage:bookmarks' },
+              xml('conference', { jid: jid, autojoin: autojoin ? 'true' : 'false' },
+                xml('nick', {}, this.username)
+              )
+            )
+          )
+        )
+      )
+    );
+
+    try {
+      await this.xmpp.send(iq);
+      console.log(`Bookmark saved for group: ${jid} with autojoin set to ${autojoin}`);
+    } catch (err) {
+      console.error('Error saving bookmark:', err.toString());
+    }
+  }
+
+  /**
+   * Join a room and save it as a bookmark with autojoin.
+   * @param {string} roomJid - The JID of the room to join.
+   * @param {string} nickname - The nickname to use in the room.
+   */
+  async joinRoomAndBookmark(roomJid, nickname) {
+    console.log(`Uniendo a la sala ${roomJid} con el apodo ${nickname}`);
+    await this.joinRoom(roomJid, nickname);
+    await this.savesBookmark(roomJid, true);
+  }
+
+
+  async inviteToRoom(roomJid, inviteeJid) {
+    const message = xml('message', {
+        to: roomJid
+    },
+    xml('x', { xmlns: 'http://jabber.org/protocol/muc#user' },
+        xml('invite', { to: inviteeJid },
+            xml('reason', {}, 'Join us in this room!')
+        )
+    ));
+    try {
+        await this.xmpp.send(message);
+        console.log(`Invitation sent to ${inviteeJid} to join ${roomJid}`);
+    } catch (error) {
+        console.error('Error sending invitation:', error.toString());
+    }
+  }
 
   /**
    * Description

@@ -14,7 +14,8 @@ import ContactPopup from '@/components/ContactPopup/ContactPopup'
 import { AiTwotoneDelete } from "react-icons/ai"
 import FileUploader from '@/components/FileUploader/FileUploader'
 import { IoNotifications } from "react-icons/io5"
-import NotificationsPopUp from '@/components/NotificationsPopUp/NotificationsPopUp';
+import NotificationsPopUp from '@/components/NotificationsPopUp/NotificationsPopUp'
+import ChannelCreate from '@/components/ChannelCreate/ChannelCreate'
 
 
 
@@ -51,14 +52,13 @@ const Chat = () => {
     const [profilePopup, setProfilePopup] = useState(false);
 
     const [joinChannel, setJoinChannel] = useState(false);
+    const [createChannel, setCreateChannel] = useState(false);
     const [nickname, setNickname] = useState('');
 
     const [showNotification, setShowNotification] = useState(false);
 
 
     /*chats*/
-    
-
 
     const handleSelectContact = (contact) => {
         console.log("Selected contact: ", contact);
@@ -212,10 +212,13 @@ const Chat = () => {
     const handleJoinChannel = () => {
         setJoinChannel(!joinChannel);
     }
-
     const onhandleChannel = () => {
         setShowChannelMessages(!showChannelMessages);
     }
+    const handleCreateChannel = () => {
+        setCreateChannel(!createChannel);
+    }
+
 
     /*notifications*/
 
@@ -333,7 +336,7 @@ const Chat = () => {
                                 className='text-white ml-2 cursor-pointer'
                                 onClick={onhandleChannel}
                             />
-                            <button>
+                            <button onClick={handleCreateChannel}>
                                 +
                             </button>
                         </div>
@@ -354,19 +357,19 @@ const Chat = () => {
                         {selectedContact && renderMessages(selectedContact)}
                     </div>
                     <div className='fixed bottom-0 w-full flex justify-end'>
-                        <div className='w-1/4'>
+                        <div className='flex w-full justify-end'>
                             <FileUploader xmpp={xmpp} to={selectedContact}/>
+                            <input 
+                                type='text' 
+                                placeholder='Message' 
+                                className='p-2 rounded-md bg-white border border-gray-300 w-full'
+                                value={privateMessage}
+                                onChange={onChangePrivateMessage}
+                            />
+                            <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() =>  selectedContact.includes('@conference') ? handleSendGroupMessage({to: selectedContact, message: privateMessage}) : handleSendPrivateMessage({to: selectedContact, message: privateMessage})}>
+                                <FiSend />
+                            </button>
                         </div>
-                        <input 
-                            type='text' 
-                            placeholder='Message' 
-                            className='p-2 rounded-md bg-white border border-gray-300 w-full'
-                            value={privateMessage}
-                            onChange={onChangePrivateMessage}
-                        />
-                        <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() =>  selectedContact.includes('@conference') ? handleSendGroupMessage({to: selectedContact, message: privateMessage}) : handleSendPrivateMessage({to: selectedContact, message: privateMessage})}>
-                            <FiSend />
-                        </button>
                     </div>
                 </div>
             </div>
@@ -439,6 +442,11 @@ const Chat = () => {
             {
                 showNotification && (
                     <NotificationsPopUp notifications={notification} />
+                )
+            }
+            {
+                createChannel && (
+                    <ChannelCreate xmpp={xmpp} />
                 )
             }
         </div>
