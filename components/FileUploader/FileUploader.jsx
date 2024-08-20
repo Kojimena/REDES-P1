@@ -13,7 +13,7 @@ const FileUploader = ({ xmpp, to }) => {
     };
 
     const onSendFile = (url) => {
-        xmpp.sendMessage(to, url);
+        to.includes('conference') ? xmpp.sendMessageToRoom(to, url,true) : xmpp.sendMessage(to, url, true);
     };
 
     const handleUpload = async (selectedFile) => {

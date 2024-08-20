@@ -42,10 +42,12 @@ const ChannelCreate = ({ xmpp }) => {
 
 
   return (
-    <div className="absolute bottom-0 right-0 flex flex-col justify-start p-10 gap-10 items-center h-screen bg-black"> 
-        <button className="btn bg-black text-white" onClick={() => setstateChannel('create')}>Create Channel</button>
-        <button className="btn bg-black text-white" onClick={() => setstateChannel('send')}>Send message to channel</button>
-        <button className="btn bg-black text-white" onClick={() => setstateChannel('join')}>Join Channel</button>
+    <div className="absolute bottom-0 right-0 flex flex-col justify-start p-10 gap-10 items-center h-screen bg-black w-96"> 
+        <div className='flex gap-4 justify-between'>
+            <button className={`bg-transparent text-white ${stateChannel === 'create' ? 'border-b-2 border-white p-2' : ''}`} onClick={() => setstateChannel('create')}>Create</button>
+            <button className={`bg-transparent text-white ${stateChannel === 'send' ? 'border-b-2 border-white p-2' : ''}`} onClick={() => setstateChannel('send')}>Send Message</button>
+            <button className={`bg-transparent text-white ${stateChannel === 'join' ? 'border-b-2 border-white p-2' : ''}`} onClick={() => setstateChannel('join')}>Join Channel</button>
+        </div>
         {
             stateChannel === 'create' && (
                 <div className="flex gap-4 justify-between flex-col">

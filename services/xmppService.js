@@ -345,9 +345,13 @@ class XmppService extends EventEmitter{
    * @param {any} message
    * @returns {any}
    */
-  async sendMessage(to, message) {
+  async sendMessage(to, message, isFile = false) {
     try {
       const stanza = xml('message', { to, type: 'chat' }, xml('body', {}, message));
+      if (isFile) {
+        const x = xml('x', { xmlns: 'jabber:x:oob' }, xml('url', {}, message));
+        stanza.append(x);
+      }
       await this.xmpp.send(stanza);
       console.log('Message sent');
       this.retrieveArchivedMessages(to);
@@ -382,16 +386,26 @@ class XmppService extends EventEmitter{
   
   
 
-  sendMessageToRoom(roomJid, message) {
+  sendMessageToRoom(roomJid, message, isFile = false) {
     try {
-      const stanza = xml('message', {to: roomJid, type: 'groupchat'}, xml('body', {}, message));
-      this.xmpp.send(stanza);
-      this.emit('groupMessageReceived', this.groupConversations);
+        const body = xml('body', {}, message);
+        const messageXML = xml('message', {
+            to: roomJid,
+            type: 'groupchat'
+        }, body);
+
+        if (isFile) {
+            const x = xml('x', { xmlns: 'jabber:x:oob' }, xml('url', {}, message));
+            messageXML.append(x);
+        }
+
+        this.xmpp.send(messageXML);
+        console.log('Message sent to room:', roomJid);
+        this.emit('groupMessageReceived', this.groupConversations);
     } catch (err) {
-      console.error('Error sending message to group chat:', err.toString());
+        console.error('Error sending message to group chat:', err.toString());
     }
   }
-  
 
 
   async acceptInvitation(jid) {
