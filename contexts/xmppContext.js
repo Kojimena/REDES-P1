@@ -25,6 +25,7 @@ export const XmppProvider = ({ children }) => {
     const [grupalInvitations, setGrupalInvitations] = useState([]);
     const [error, setError] = useState("");
     const [notification, setNotification] = useState([]);
+    const [publicRooms, setPublicRooms] = useState([]);
     const router = useRouter();
 
 
@@ -73,16 +74,22 @@ export const XmppProvider = ({ children }) => {
                 }
             };
 
+            const handleRoomsReceived = (rooms) => {
+                setPublicRooms(rooms);
+            };
+
             xmpp.on('messageReceived', handleMessages);
             xmpp.on('groupMessageReceived', handleGrupalMessages);
             xmpp.on('invitationReceived', handleInvitationReceived);
             xmpp.on('notificationReceived', handleNotificationReceived);
+            xmpp.on('roomsReceived', handleRoomsReceived);
 
             return () => {
                 xmpp.off('messageReceived', handleMessages);
                 xmpp.off('groupMessageReceived', handleGrupalMessages);
                 xmpp.off('invitationReceived', handleInvitationReceived);
                 xmpp.off('notificationReceived', handleNotificationReceived);
+                xmpp.off('roomsReceived', handleRoomsReceived);
             };
         }
     }, [xmpp]);
@@ -208,6 +215,7 @@ export const XmppProvider = ({ children }) => {
         error,
         notification,
         clearNotification,
+        publicRooms,
         grupalConversations }}>
         {children}
         </XmppContext.Provider>

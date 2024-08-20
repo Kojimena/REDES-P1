@@ -16,6 +16,7 @@ import FileUploader from '@/components/FileUploader/FileUploader'
 import { IoNotifications } from "react-icons/io5"
 import NotificationsPopUp from '@/components/NotificationsPopUp/NotificationsPopUp'
 import ChannelCreate from '@/components/ChannelCreate/ChannelCreate'
+import { FaPeopleRoof } from "react-icons/fa6"
 
 
 
@@ -34,6 +35,7 @@ const Chat = () => {
         grupalInvitations, 
         grupalConversations, 
         myStatus,
+        publicRooms,
         notification } = useXmpp();
 
     const [toMessage, setToMessage] = useState('');
@@ -51,11 +53,11 @@ const Chat = () => {
 
     const [profilePopup, setProfilePopup] = useState(false);
 
-    const [joinChannel, setJoinChannel] = useState(false);
     const [createChannel, setCreateChannel] = useState(false);
-    const [nickname, setNickname] = useState('');
 
     const [showNotification, setShowNotification] = useState(false);
+
+    const [viewRooms, setViewRooms] = useState(false);
 
 
     /*chats*/
@@ -209,14 +211,15 @@ const Chat = () => {
     }       
     
     /*chatrooms*/
-    const handleJoinChannel = () => {
-        setJoinChannel(!joinChannel);
-    }
     const onhandleChannel = () => {
         setShowChannelMessages(!showChannelMessages);
     }
     const handleCreateChannel = () => {
         setCreateChannel(!createChannel);
+    }
+
+    const handleViewRooms = () => {
+        setViewRooms(!viewRooms);
     }
 
 
@@ -250,6 +253,7 @@ const Chat = () => {
                 className="absolute bottom-0 right-0 rounded-md m-2"
             />
             <div className='absolute top-0 right-0 m-4 flex gap-4'>
+                <FaPeopleRoof className='text-black text-3xl cursor-pointer' onClick={handleViewRooms} />
                 <CgProfile className='text-black text-3xl cursor-pointer' onClick={handleProfilePopup} />
                 <FaUserFriends className='text-black text-3xl cursor-pointer' onClick={handleViewContacts} />
                 <div className='relative'>
@@ -263,7 +267,6 @@ const Chat = () => {
                     }
                 </div>
                 <RiLogoutCircleRLine className='text-black text-3xl cursor-pointer' onClick={handleLogout} />
-                
             </div>
             <div className="mockup-code text-white w-full h-[98%] flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
                 <div className='bg-transparent text-black rounded-md m-4 md:w-1/4 shadow-lg overflow-y-scroll'>
@@ -293,18 +296,10 @@ const Chat = () => {
                             <div className='flex items-center justify-between p-2 m-2 bg-gray-500 rounded-xl cursor-pointer relative' key={invite}>
                                 <div className='flex items-center'>
                                     <div className='ml-2 text-white'>{invite}</div>
-                                    <button className='bg-black text-white p-2 rounded-r-xl ml-2 absolute right-0' onClick={handleJoinChannel}>
+                                    <button className='bg-black text-white p-2 rounded-r-xl ml-2 absolute right-0' onClick={() => xmpp.joinRoom(invite, xmpp.username)}>
                                         Accept
                                     </button>
                                 </div>
-                                {
-                                    joinChannel && (
-                                        <div className='flex flex-col gap-4'>
-                                            <input type='text' placeholder='nickname' className='input input-bordered p-2' onChange={(e) => setNickname(e.target.value)} />
-                                            <button className='btn bg-black text-white' onClick={() => xmpp.joinRoom(invite, nickname)}>Join</button>
-                                        </div>
-                                    )
-                                }
                             </div>
                         ))
 
@@ -447,6 +442,30 @@ const Chat = () => {
             {
                 createChannel && (
                     <ChannelCreate xmpp={xmpp} />
+                )
+            }
+            {
+                viewRooms && publicRooms && (
+                    <div className='fixed inset-0 w-96 m-4 bg-white p-4 rounded-md shadow-lg overflow-y-auto'>
+                        <span className='text-md p-4 font-poppins text-black flex justify-center items-center font-semibold'>
+                            Rooms
+                        </span>
+                        <button  className='absolute top-0 right-0' onClick={handleViewRooms}>
+                            <MdCancel  className='text-black text-2xl cursor-pointer' />
+                        </button>
+                        {
+                            publicRooms.map(room => (
+                                <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={room}>
+                                    <div className='flex items-center'>
+                                        <div className='h-8 w-8 bg-black rounded-full'></div>
+                                        <div className='ml-2 flex flex-col'>
+                                            <span className='font-medium text-black'>{room}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        }
+                    </div>
                 )
             }
         </div>

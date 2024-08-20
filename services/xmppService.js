@@ -18,6 +18,7 @@ class XmppService extends EventEmitter{
     this.status = '';
     this.groupConversations = {};
     this.history_messages = {};
+    this.myRooms = [];
     this.domain = 'alumchat.lol';
 
 
@@ -52,11 +53,13 @@ class XmppService extends EventEmitter{
       this.emit('presenceUpdated', this.presence);
       await new Promise(resolve => setTimeout(resolve, 1000));  
       this.getRoster();
+      this.getRooms();
       this.emit('online');
     });
 
     this.xmpp.on('stanza', async (stanza) => {
       if (stanza.is('message') && stanza.getChild('body')) {
+        console.log('📩 Messageeeeeeee:', stanza.toString());
         const body = stanza.getChild('body').text();
         const from = stanza.attrs.from;
         const isGroupChat = stanza.attrs.type === 'groupchat'; // Verificar si es un mensaje de chat grupal
@@ -64,6 +67,7 @@ class XmppService extends EventEmitter{
         console.log('📩 Message from', from, ':', body);
     
         if (isGroupChat) {
+          console.log('📩 Group message:', body);
           this.groupConversations = this.groupConversations || {};
           const groupJid = from.split('/')[0];
           const senderJid = from.split('/')[1];
@@ -84,7 +88,6 @@ class XmppService extends EventEmitter{
         this.handleRoster(stanza);
 
     } else if (stanza.is('iq') && stanza.attrs.type === 'set' && stanza.getChild('query') && stanza.getChild('query').attrs.xmlns === 'jabber:iq:roster') {
-        //console.log('📩 Rosterrrrrrrrrr:', stanza.toString());
         const item = stanza.getChild('query').getChild('item');
         const jid = item.attrs.jid;
         const subscription = item.attrs.subscription;
@@ -96,7 +99,6 @@ class XmppService extends EventEmitter{
 
     } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
             const from = stanza.attrs.from;
-            //console.log('📩 Subscription request from:', from);
             this.emit('invitationReceived', from);
 
     } else if (stanza.is('presence') && stanza.attrs.from !== this.xmpp.options.jid) {
@@ -139,9 +141,14 @@ class XmppService extends EventEmitter{
     } else if  (stanza.is('presence') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
         const item = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('item');
         const status = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChildren('status');
+        console.log('📩 PRESENCE GRUPO!!!!:', stanza.attrs.from, '📩:', item.attrs.affiliation, item.attrs.role);
         if (item.attrs.affiliation === 'member' && item.attrs.role === 'participant') {
             const roomJid = stanza.attrs.from;
             console.log(`Unido a la sala: ${roomJid}`);
+            this.emit('roomJoined',roomJid);
+        } else if (item.attrs.affiliation === 'owner' && item.attrs.role === 'moderator') {
+            const roomJid = stanza.attrs.from;
+            console.log(`Unido como moderador a la sala: ${roomJid}`);
             this.emit('roomJoined',roomJid);
         }
     } else if (stanza.is('message') && stanza.getChild('event', 'http://jabber.org/protocol/pubsub#event')) {
@@ -158,7 +165,7 @@ class XmppService extends EventEmitter{
                           const nick = conference.getChildText('nick');
                           const autojoin = conference.attrs.autojoin === 'true';
                           console.log(`Bookmark found: JID=${jid}, Nick=${nick}, Autojoin=${autojoin}`);
-                          this.saveBookmark(jid, nick, autojoin);
+                          this.saveBookmark(jid, autojoin);
                       }
                   }
               }
@@ -184,9 +191,33 @@ class XmppService extends EventEmitter{
             }
             console.log('📩 Conversations:', this.conversations);
         }
-    }
+    } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'create1') {
+        console.log('📩 Room configuration:', stanza.toString());
+        let query = stanza.getChild('query', 'http://jabber.org/protocol/muc#owner');
+        if (query) {
+            let form = query.getChild('x', 'jabber:x:data');
+            if (form) {
+                let fields = form.getChildren('field');
+                let formValues = {};
+                fields.forEach(field => {
+                    let value = field.getChildText('value');
+                    formValues[field.attrs.var] = value;
+                });
+                console.log('📩 Room configuration form:', formValues);
+                this.sendDefaultRoomConfiguration(stanza.attrs.from, form);
+            }
+        }
+      } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'ownedRooms') {
+        const items = stanza.getChild('query', 'http://jabber.org/protocol/disco#items').getChildren('item');   
+        items.forEach(item => {
+            const roomJid = item.attrs.jid;
+            console.log(`Room found: ${roomJid}`);
+            this.myRooms.push(roomJid);
+        });
+        this.emit('roomsReceived', this.myRooms);
+      }
       else {
-        //console.log('----:', stanza.toString());
+        console.log('----:', stanza.toString());
       }
     });
     
@@ -417,46 +448,129 @@ class XmppService extends EventEmitter{
     }
   }
 
-    /**
-   * Save group chat bookmark with autojoin option.
-   * @param {string} jid - The JID of the group chat to bookmark.
-   * @param {boolean} autojoin - Whether to join this chat automatically on login.
-   */
-  async savesBookmark(jid, autojoin) {
+  async savesBookmark(roomJid, autojoin) {
     const iq = xml('iq', { type: 'set' },
-      xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
-        xml('publish', { node: 'storage:bookmarks' },
-          xml('item', { id: 'current' },
-            xml('storage', { xmlns: 'storage:bookmarks' },
-              xml('conference', { jid: jid, autojoin: autojoin ? 'true' : 'false' },
-                xml('nick', {}, this.username)
-              )
+        xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
+            xml('publish', { node: 'storage:bookmarks' },
+                xml('item', { id: 'current' },
+                    xml('storage', { xmlns: 'storage:bookmarks' },
+                        xml('conference', { jid: roomJid, autojoin: autojoin ? 'true' : 'false' },
+                            xml('nick', {}, this.username)
+                        )
+                    )
+                )
             )
-          )
         )
-      )
     );
 
     try {
-      await this.xmpp.send(iq);
-      console.log(`Bookmark saved for group: ${jid} with autojoin set to ${autojoin}`);
+        await this.xmpp.send(iq);
+        console.log(`Bookmark saved for room: ${roomJid} with autojoin set to ${autojoin}`);
     } catch (err) {
-      console.error('Error saving bookmark:', err.toString());
+        console.error('Error saving bookmark:', err.toString());
+    }
+}
+
+  async joinRoomAsModerator(roomJid, nickname) {
+    const presence = xml('presence', {
+        to: `${roomJid}/${nickname}`,
+        id: 'create1'
+    }, xml('x', { xmlns: 'http://jabber.org/protocol/muc' }));
+    try {
+        await this.xmpp.send(presence);
+        this.emit('roomJoined', roomJid);
+    } catch (err) {
+        console.error('Error joining room:', err.toString());
+    }
+
+    const iq = xml('iq', {
+        from: this.xmpp.options.jid,
+        id: 'create1',
+        to: roomJid,
+        type: 'get'
+    }, xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }));
+    try {
+        await this.xmpp.send(iq);
+    } catch (err) {
+        console.error('Error requesting room configuration:', err.toString());
     }
   }
 
-  /**
-   * Join a room and save it as a bookmark with autojoin.
-   * @param {string} roomJid - The JID of the room to join.
-   * @param {string} nickname - The nickname to use in the room.
-   */
-  async joinRoomAndBookmark(roomJid, nickname) {
-    console.log(`Uniendo a la sala ${roomJid} con el apodo ${nickname}`);
-    await this.joinRoom(roomJid, nickname);
+  async sendDefaultRoomConfiguration(roomJid, form) {
+    const submitForm = xml('x', { xmlns: 'jabber:x:data', type: 'submit' });
+
+    form.getChildren('field').forEach(field => {
+        const value = field.getChild('value') ? field.getChild('value').text() : '';
+        const submitField = xml('field', { var: field.attrs.var });
+        //make it persistent
+        if (field.attrs.var === 'muc#roomconfig_persistentroom') {
+            submitField.append(xml('value', {}, '1'));
+        }else {
+            submitField.append(xml('value', {}, value));
+        }
+
+        submitForm.append(submitField);
+    });
+
+    console.log('Submitting default room configuration:', submitForm.toString());
+    const responseIq = xml('iq', { to: roomJid, type: 'set' },
+        xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }, submitForm)
+    );
+    await this.xmpp.send(responseIq);
+    console.log('Sent default room configuration:', responseIq.toString());
     await this.savesBookmark(roomJid, true);
   }
 
+  async getRooms() {
+    const iq = xml('iq', { type: 'get', to: `conference.${this.domain}`, id: 'ownedRooms' },
+      xml('query', { xmlns: 'http://jabber.org/protocol/disco#items' })
+    );
+  
+    try {
+       await this.xmpp.sendReceive(iq);
+    } catch (err) {
+      console.error('Error fetching rooms:', err.toString());
+    }
+  }  
 
+  async requestParticipantsList(roomJid, from) {
+    console.log('Requesting participants list for with:', roomJid);
+    console.log('Requesting participants list for from:', from);
+    const iq = xml('iq', {
+        from: from,
+        to: roomJid,
+        type: 'get',
+        id: 'participantsList'
+    }, xml('query', { xmlns: 'http://jabber.org/protocol/muc#admin' },
+        xml('item', { affiliation: 'member' })  
+    ));
+
+    try {
+        const result = await this.xmpp.iqCaller.request(iq);
+        console.log('Participants list received:', result.toString());
+
+        const participants = [];
+        result.getChildren('query', 'http://jabber.org/protocol/muc#admin')[0]
+              .getChildren('item').forEach(item => {
+                  participants.push({
+                      jid: item.attrs.jid,
+                      role: item.attrs.role,
+                      affiliation: item.attrs.affiliation
+                  });
+              });
+        console.log('Participants:', participants);
+
+    } catch (err) {
+        console.error('Error requesting participants list:', err.toString());
+    }
+}
+
+
+  async joinRoomAndBookmarkAsModerator(roomJid, nickname) {
+    await this.joinRoomAsModerator(roomJid, nickname);
+  }
+
+  
   async inviteToRoom(roomJid, inviteeJid) {
     const message = xml('message', {
         to: roomJid
