@@ -62,7 +62,7 @@ class XmppService extends EventEmitter{
         console.log('📩 Messageeeeeeee:', stanza.toString());
         const body = stanza.getChild('body').text();
         const from = stanza.attrs.from;
-        const isGroupChat = stanza.attrs.type === 'groupchat'; // Verificar si es un mensaje de chat grupal
+        const isGroupChat = stanza.attrs.type === 'groupchat';
     
         console.log('📩 Message from', from, ':', body);
     
@@ -141,7 +141,6 @@ class XmppService extends EventEmitter{
     } else if  (stanza.is('presence') && stanza.getChild('x', 'http://jabber.org/protocol/muc#user')) {
         const item = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChild('item');
         const status = stanza.getChild('x', 'http://jabber.org/protocol/muc#user').getChildren('status');
-        console.log('📩 PRESENCE GRUPO!!!!:', stanza.attrs.from, '📩:', item.attrs.affiliation, item.attrs.role);
         if (item.attrs.affiliation === 'member' && item.attrs.role === 'participant') {
             const roomJid = stanza.attrs.from;
             console.log(`Unido a la sala: ${roomJid}`);
@@ -178,7 +177,6 @@ class XmppService extends EventEmitter{
             const body = message.getChild('body').text();
             const from = message.attrs.from;
             const to = message.attrs.to;
-            console.log('📩 Archived message from', from, ':', body);
             const fromJid = from.split('/')[0];
             const toJid = to.split('/')[0];
             const timestamp = forwarded.getChild('delay', 'urn:xmpp:delay').attrs.stamp;
@@ -192,7 +190,6 @@ class XmppService extends EventEmitter{
             console.log('📩 Conversations:', this.conversations);
         }
     } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'create1') {
-        console.log('📩 Room configuration:', stanza.toString());
         let query = stanza.getChild('query', 'http://jabber.org/protocol/muc#owner');
         if (query) {
             let form = query.getChild('x', 'jabber:x:data');
@@ -258,6 +255,12 @@ class XmppService extends EventEmitter{
     this.emit('statusUpdated', this.status);
   }
 
+  /**
+   * Function to connect to xmpp
+   * @param {any} jid
+   * @param {any} password
+   * @returns {any}
+   */
   async connect(jid, password) {
     this.xmpp.options.username = jid.split('@')[0];
     this.xmpp.options.password = password;
@@ -271,6 +274,12 @@ class XmppService extends EventEmitter{
     }
   }    
 
+  /**
+   * Function to register to xmpp
+   * @param {any} jid
+   * @param {any} password
+   * @returns {any}
+   */
   async register(jid, password) {
       try {
         const stanza = xml(
@@ -290,7 +299,7 @@ class XmppService extends EventEmitter{
       }
   }
 
-    /**
+  /**
    * Function to handle roster
    * @param {any} stanza
    * @returns {any}
@@ -327,6 +336,10 @@ class XmppService extends EventEmitter{
     this.emit('rosterUpdated', Array.from(this.roster));
   }
 
+  /**
+   * Function to get roster
+   * @returns {any}
+   */
   async getRoster() {
     try {
       await this.xmpp.iqCaller.request(
@@ -360,6 +373,12 @@ class XmppService extends EventEmitter{
     }
   }
 
+  /**
+   * Function to get history messages
+   * @param {any} jid
+   * @param {any} max=100
+   * @returns {any}
+   */
   async retrieveArchivedMessages(jid, max = 100) {
     const queryId = 'mam_query_1';
     try {
@@ -386,6 +405,13 @@ class XmppService extends EventEmitter{
   
   
 
+  /**
+   * Function to send message to a group 
+   * @param {any} roomJid
+   * @param {any} message
+   * @param {any} isFile=false
+   * @returns {any}
+   */
   sendMessageToRoom(roomJid, message, isFile = false) {
     try {
         const body = xml('body', {}, message);
@@ -408,6 +434,11 @@ class XmppService extends EventEmitter{
   }
 
 
+  /**
+   * Function to accept invitation
+   * @param {any} jid
+   * @returns {any}
+   */
   async acceptInvitation(jid) {
     try {
       const stanza = xml('presence', { to: jid, type: 'subscribed' });
@@ -419,6 +450,11 @@ class XmppService extends EventEmitter{
     }
   }    
 
+  /**
+   * Function to remove contact
+   * @param {any} jid
+   * @returns {any}
+   */
   async removeContact(jid) {
     try {
       const removeStanza = xml('iq', { type: 'set', id: 'removeContact_1' },
@@ -436,6 +472,11 @@ class XmppService extends EventEmitter{
     }
   }
 
+  /**
+   * Function to send subscription request
+   * @param {any} jid
+   * @returns {any}
+   */
   async sendSubscriptionRequest(jid) {
     try {
       const stanza = xml('presence', { to: jid, type: 'subscribe' });
@@ -465,6 +506,12 @@ class XmppService extends EventEmitter{
     }
   }
 
+  /**
+   * Function to save bookmark
+   * @param {any} roomJid
+   * @param {any} autojoin
+   * @returns {any}
+   */
   async savesBookmark(roomJid, autojoin) {
     const iq = xml('iq', { type: 'set' },
         xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
@@ -486,8 +533,14 @@ class XmppService extends EventEmitter{
     } catch (err) {
         console.error('Error saving bookmark:', err.toString());
     }
-}
+  }
 
+  /**
+   * Function to join a room as moderator
+   * @param {any} roomJid
+   * @param {any} nickname
+   * @returns {any}
+   */
   async joinRoomAsModerator(roomJid, nickname) {
     const presence = xml('presence', {
         to: `${roomJid}/${nickname}`,
@@ -513,6 +566,12 @@ class XmppService extends EventEmitter{
     }
   }
 
+  /**
+   * Function to send default room configuration
+   * @param {any} roomJid
+   * @param {any} form
+   * @returns {any}
+   */
   async sendDefaultRoomConfiguration(roomJid, form) {
     const submitForm = xml('x', { xmlns: 'jabber:x:data', type: 'submit' });
 
@@ -538,6 +597,10 @@ class XmppService extends EventEmitter{
     await this.savesBookmark(roomJid, true);
   }
 
+  /**
+   * Function to get rooms
+   * @returns {any}
+   */
   async getRooms() {
     const iq = xml('iq', { type: 'get', to: `conference.${this.domain}`, id: 'ownedRooms' },
       xml('query', { xmlns: 'http://jabber.org/protocol/disco#items' })
@@ -550,44 +613,23 @@ class XmppService extends EventEmitter{
     }
   }  
 
-  async requestParticipantsList(roomJid, from) {
-    console.log('Requesting participants list for with:', roomJid);
-    console.log('Requesting participants list for from:', from);
-    const iq = xml('iq', {
-        from: from,
-        to: roomJid,
-        type: 'get',
-        id: 'participantsList'
-    }, xml('query', { xmlns: 'http://jabber.org/protocol/muc#admin' },
-        xml('item', { affiliation: 'member' })  
-    ));
-
-    try {
-        const result = await this.xmpp.iqCaller.request(iq);
-        console.log('Participants list received:', result.toString());
-
-        const participants = [];
-        result.getChildren('query', 'http://jabber.org/protocol/muc#admin')[0]
-              .getChildren('item').forEach(item => {
-                  participants.push({
-                      jid: item.attrs.jid,
-                      role: item.attrs.role,
-                      affiliation: item.attrs.affiliation
-                  });
-              });
-        console.log('Participants:', participants);
-
-    } catch (err) {
-        console.error('Error requesting participants list:', err.toString());
-    }
-}
-
-
+  /**
+   * Function to join a room and bookmark as moderator
+   * @param {any} roomJid
+   * @param {any} nickname
+   * @returns {any}
+   */
   async joinRoomAndBookmarkAsModerator(roomJid, nickname) {
     await this.joinRoomAsModerator(roomJid, nickname);
   }
 
   
+  /**
+   * Function to invite to room
+   * @param {any} roomJid
+   * @param {any} inviteeJid
+   * @returns {any}
+   */
   async inviteToRoom(roomJid, inviteeJid) {
     const message = xml('message', {
         to: roomJid
@@ -618,11 +660,10 @@ class XmppService extends EventEmitter{
     }
   }
 
-  clearHistory() {
-    this.history_messages = {};
-    this.emit('historyReceived', this.history_messages);
-  }
-
+  /**
+   * Function to delete account from server
+   * @returns {any}
+   */
   async deleteAccount() {
     const deleteStanza = xml('iq', { type: 'set', id: 'deleteAccount1' },
         xml('query', { xmlns: 'jabber:iq:register' },
@@ -639,6 +680,10 @@ class XmppService extends EventEmitter{
   }
 
 
+  /**
+   * Function to disconnect from xmpp
+   * @returns {any}
+   */
   async disconnect() {
     console.log('Iniciando la desconexión...');
     this.xmpp.stop().then(() => {
@@ -647,7 +692,7 @@ class XmppService extends EventEmitter{
     }).catch(err => {
         console.error('Error al desconectar:', err.toString());
     });
-}
+  }
 
 }
 
