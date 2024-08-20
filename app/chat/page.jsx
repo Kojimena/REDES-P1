@@ -17,6 +17,8 @@ import { IoNotifications } from "react-icons/io5"
 import NotificationsPopUp from '@/components/NotificationsPopUp/NotificationsPopUp'
 import ChannelCreate from '@/components/ChannelCreate/ChannelCreate'
 import { FaPeopleRoof } from "react-icons/fa6"
+import { TbHttpDelete } from "react-icons/tb"
+import DelPopUp from '@/components/DelPopUp/DelPopUp'
 
 
 
@@ -58,6 +60,8 @@ const Chat = () => {
     const [showNotification, setShowNotification] = useState(false);
 
     const [viewRooms, setViewRooms] = useState(false);
+
+    const [delAccount, setDelAccount] = useState(false);
 
 
     /*chats*/
@@ -240,6 +244,11 @@ const Chat = () => {
             localStorage.removeItem('reconnect'); // Limpiar la marca después de reconectar
         }
     }, [alreadyLogged]);
+
+    /*delete account*/
+    const handleDeleteAccount = () => {
+        setDelAccount(!delAccount);
+    }
     
 
     
@@ -266,6 +275,7 @@ const Chat = () => {
                         )
                     }
                 </div>
+                <TbHttpDelete className='text-black text-3xl cursor-pointer' onClick={handleDeleteAccount} />
                 <RiLogoutCircleRLine className='text-black text-3xl cursor-pointer' onClick={handleLogout} />
             </div>
             <div className="mockup-code text-white w-full h-[98%] flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
@@ -466,6 +476,11 @@ const Chat = () => {
                             ))
                         }
                     </div>
+                )
+            }
+            {
+                delAccount && (
+                    <DelPopUp xmpp={xmpp} onClose={handleDeleteAccount} />
                 )
             }
         </div>

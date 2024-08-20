@@ -78,11 +78,17 @@ export const XmppProvider = ({ children }) => {
                 setPublicRooms(rooms);
             };
 
+            const handleDeleteAccount = () => {
+                setAlreadyLogged(false);
+            };
+
+
             xmpp.on('messageReceived', handleMessages);
             xmpp.on('groupMessageReceived', handleGrupalMessages);
             xmpp.on('invitationReceived', handleInvitationReceived);
             xmpp.on('notificationReceived', handleNotificationReceived);
             xmpp.on('roomsReceived', handleRoomsReceived);
+            xmpp.on('deleteAccount', handleDeleteAccount);
 
             return () => {
                 xmpp.off('messageReceived', handleMessages);
@@ -90,6 +96,7 @@ export const XmppProvider = ({ children }) => {
                 xmpp.off('invitationReceived', handleInvitationReceived);
                 xmpp.off('notificationReceived', handleNotificationReceived);
                 xmpp.off('roomsReceived', handleRoomsReceived);
+                xmpp.off('deleteAccount', handleDeleteAccount);
             };
         }
     }, [xmpp]);

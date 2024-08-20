@@ -215,6 +215,9 @@ class XmppService extends EventEmitter{
             this.myRooms.push(roomJid);
         });
         this.emit('roomsReceived', this.myRooms);
+      } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'deleteAccount1') {
+        console.log('📩 Account deleted:', stanza.toString());
+        this.emit('accountDeleted');
       }
       else {
         console.log('----:', stanza.toString());
@@ -605,6 +608,22 @@ class XmppService extends EventEmitter{
     this.history_messages = {};
     this.emit('historyReceived', this.history_messages);
   }
+
+  async deleteAccount() {
+    const deleteStanza = xml('iq', { type: 'set', id: 'deleteAccount1' },
+        xml('query', { xmlns: 'jabber:iq:register' },
+            xml('remove')
+        )
+    );
+
+    try {
+        await this.xmpp.send(deleteStanza);
+        console.log('Account deletion request sent.');
+    } catch (err) {
+        console.error('Failed to delete account:', err.toString());
+    }
+  }
+
 
   async disconnect() {
     console.log('Iniciando la desconexión...');
