@@ -140,16 +140,15 @@ To get started with this project, follow these steps:
 - **@xmpp/client**: A library for connecting to an XMPP server.
 - **@react-icons/all-files**: A library for using icons in React applications.
 
+## Challenges Encountered and Lessons Learned
 
+### Challenges
+- **Integrating XMPP with React:** Initially, connecting the XMPP client with React presented challenges, particularly in state management and real-time user interface updates. 
+- **Creating a Group Chat:** Implementing the creation of group chats and adding contacts to the group was challenging due to the lack of clear documentation and examples for group chat functionalities.
+- **File Transfer:** At the beginning, implementing file transfer in group chats and 1-to-1 chats was challenging due to the complexity of handling file uploads and downloads. It required additional research and with a group of friends we decided to use AWS S3 to store the files, and then send the link to the file in the chat. For this implementation, and API was created to handle the file upload and download.
 
-
-
-
-
-
-
-
-
-
-
+### Lessons Learned
+- **Understanding XMPP Protocols:** Through this project, i learned about the XMPP protocols and how they can be used to create real-time messaging applications. I learned about the different XMPP features and how they can be implemented in a React application.
+- **Stanza Handling:** I learned how to handle different types of stanzas, such as messages, presence, and IQ stanzas, and how to send and receive stanzas using the XMPP client library.
+- **Real-time Communication:** I learned how to create real-time communication channels using XMPP and how to update the user interface in real-time when new messages are received or when a contact changes their status.
 
