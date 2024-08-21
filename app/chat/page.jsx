@@ -415,7 +415,7 @@ const Chat = () => {
                             roster.map(contact => (
                                 <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact} onClick={() => handleSelectContact(contact)}>
                                     <div className='flex items-center'>
-                                        <div className='h-8 w-8 bg-black rounded-full'></div>
+                                        <div className={`h-8 w-8 rounded-full ${contactStatus[contact] && contactStatus[contact].show === 'Available' ? 'bg-green-500' : contactStatus[contact] && contactStatus[contact].show === 'Away' ? 'bg-yellow-500' : contactStatus[contact] && contactStatus[contact].show === 'Do not disturb' ? 'bg-red-500' : contactStatus[contact] && contactStatus[contact].show === 'Extended away' ? 'bg-yellow-500' : contactStatus[contact] && contactStatus[contact].show === 'Available for chat' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
                                         <div className='ml-2 flex flex-col'>
                                             <span className='font-medium text-black'>{contact}</span>
                                             <span>

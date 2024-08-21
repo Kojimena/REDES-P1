@@ -143,6 +143,7 @@ To get started with this project, follow these steps:
 ## Challenges Encountered and Lessons Learned
 
 ### Challenges
+- **Connection with server:** Initially, connecting to the XMPP server using the XMPP client library was challenging, it took me about 3 days to understand how to connect to the server and send and receive stanzas. 
 - **Integrating XMPP with React:** Initially, connecting the XMPP client with React presented challenges, particularly in state management and real-time user interface updates. 
 - **Creating a Group Chat:** Implementing the creation of group chats and adding contacts to the group was challenging due to the lack of clear documentation and examples for group chat functionalities.
 - **File Transfer:** At the beginning, implementing file transfer in group chats and 1-to-1 chats was challenging due to the complexity of handling file uploads and downloads. It required additional research and with a group of friends we decided to use AWS S3 to store the files, and then send the link to the file in the chat. For this implementation, and API was created to handle the file upload and download.
