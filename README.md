@@ -134,6 +134,13 @@ To get started with this project, follow these steps:
    Files are displayed in the chat window.
    ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.44.13.png>)
 
+## Technologies
+- **React**: A JavaScript library for building user interfaces.
+- **Next.js**: A React framework for building server-side rendered applications.
+- **@xmpp/client**: A library for connecting to an XMPP server.
+- **@react-icons/all-files**: A library for using icons in React applications.
+
+
 
 
 
