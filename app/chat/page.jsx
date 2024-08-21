@@ -366,6 +366,7 @@ const Chat = () => {
                                 className='p-2 rounded-md bg-white border border-gray-300 w-full'
                                 value={privateMessage}
                                 onChange={onChangePrivateMessage}
+                                onKeyDown={(e) => e.key === 'Enter' && selectedContact.includes('@conference') ? handleSendGroupMessage({to: selectedContact, message: privateMessage}) : e.key === 'Enter' && handleSendPrivateMessage({to: selectedContact, message: privateMessage})}
                             />
                             <button className='bg-black text-white p-2 rounded-md ml-2' onClick={() =>  selectedContact.includes('@conference') ? handleSendGroupMessage({to: selectedContact, message: privateMessage}) : handleSendPrivateMessage({to: selectedContact, message: privateMessage})}>
                                 <FiSend />
