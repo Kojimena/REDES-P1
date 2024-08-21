@@ -44,7 +44,7 @@ const FileUploader = ({ xmpp, to }) => {
 
     return (
         <div>
-            <input type="file" className="file-input" onChange={onFileChange} />
+            <input type="file" className="file-input file-input-bordered" onChange={onFileChange} />
             {uploadStatus && <p className='absolute bottom-12 left-10 text-white'>{uploadStatus}</p>}
         </div>
     );

@@ -21,9 +21,9 @@ import { TbHttpDelete } from "react-icons/tb"
 import DelPopUp from '@/components/DelPopUp/DelPopUp'
 
 
-
 const Chat = () => {
     const [bgColor, setBgColor] = useState('#2f2f2f')
+    const rout = useRouter();
     const [showPrivateMessages, setShowPrivateMessages] = useState(false)
     const [showChannelMessages, setShowChannelMessages] = useState(false)
     const [showInvitations, setShowInvitations] = useState(false)
@@ -40,32 +40,23 @@ const Chat = () => {
         publicRooms,
         notification } = useXmpp();
 
+    /*Private messages*/
     const [toMessage, setToMessage] = useState('');
     const [messagetoSend, setMessageToSend] = useState('');
     const [privateMessage , setPrivateMessage] = useState('');
 
 
     const [showPopupMessage, setShowPopupMessage] = useState(false);
-    const rout = useRouter();
-
     const [selectedContact, setSelectedContact] = useState(null);
-
-
     const [viewContacts, setViewContacts] = useState(false);
-
     const [profilePopup, setProfilePopup] = useState(false);
-
     const [createChannel, setCreateChannel] = useState(false);
-
     const [showNotification, setShowNotification] = useState(false);
-
     const [viewRooms, setViewRooms] = useState(false);
-
     const [delAccount, setDelAccount] = useState(false);
 
 
     /*chats*/
-
     const handleSelectContact = (contact) => {
         console.log("Selected contact: ", contact);
         if (selectedContact !== contact) {
@@ -77,8 +68,6 @@ const Chat = () => {
     };
 
     const renderMessages = (contact) => {
-        console.log('Contact-------', contact);
-        console.log('Messages-------', conversationsUpdate);
         const messages = conversationsUpdate[contact];
          if (selectedContact === contact && !contact.includes('@conference') && messages) {
             return messages.map((messageObj, index) => (
@@ -141,10 +130,6 @@ const Chat = () => {
 
         return null;  // null when not selected to prevent rendering in contact list
     };
-    
-    
-
-
     
     const handleColorChange = (event) => {
         setBgColor(event.target.value)
@@ -221,27 +206,25 @@ const Chat = () => {
     const handleCreateChannel = () => {
         setCreateChannel(!createChannel);
     }
-
     const handleViewRooms = () => {
         setViewRooms(!viewRooms);
     }
 
 
     /*notifications*/
-
     const handleNotification = () => {
         setShowNotification(!showNotification);
     }
 
     useEffect(() => {
-        // Intentar restaurar la sesión al cargar el componente si está marcado para reconectar
+        // try to reconnect if the user was already logged in
         const shouldReconnect = localStorage.getItem('reconnect');
         const username = localStorage.getItem('username');
         const password = localStorage.getItem('password');
     
         if (shouldReconnect === 'true' && username && password) {
             login(username, password);
-            localStorage.removeItem('reconnect'); // Limpiar la marca después de reconectar
+            localStorage.removeItem('reconnect'); 
         }
     }, [alreadyLogged]);
 
@@ -279,9 +262,14 @@ const Chat = () => {
                 <RiLogoutCircleRLine className='text-black text-3xl cursor-pointer' onClick={handleLogout} />
             </div>
             <div className="mockup-code text-white w-full h-[98%] flex md:flex-row flex-col" style={{backgroundColor: bgColor}}>
-                <div className='bg-transparent text-black rounded-md m-4 md:w-1/4 shadow-lg overflow-y-scroll'>
+                <div className='bg-black/30 text-black rounded-md m-4 md:w-1/4 shadow-2xl overflow-y-scroll'>
                 <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Invitations
+                        <span className='text-xs text-white bg-black rounded-full p-1 mb-4'>
+                            {
+                                invitations && invitations.length && grupalInvitations && grupalInvitations.length
+                            }
+                        </span>
                         <div className='gap-4 flex justify-center items-center'>
                             <IoIosArrowDropdownCircle 
                                 className='text-white ml-2 cursor-pointer'
@@ -315,7 +303,10 @@ const Chat = () => {
 
                     }
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
-                        Direct Messages
+                        Direct Messages 
+                        <span className='text-xs text-white bg-black rounded-full p-1 mb-4'>
+                            {conversationsUpdate && Object.keys(conversationsUpdate).length}
+                        </span>
                         <div className='gap-4 flex justify-center items-center'>
                             <IoIosArrowDropdownCircle 
                                 className='text-white ml-2 cursor-pointer'
@@ -336,6 +327,11 @@ const Chat = () => {
                     ))}
                     <span className='text-md p-4 font-poppins text-white flex justify-start items-center font-semibold'>
                         Channels
+                        <span className='text-xs text-white bg-black rounded-full p-1 mb-4'>
+                            {
+                                grupalConversations && Object.keys(grupalConversations).length
+                            }
+                        </span>
                         <div className='gap-4 flex justify-center items-center'>
                             <IoIosArrowDropdownCircle 
                                 className='text-white ml-2 cursor-pointer'

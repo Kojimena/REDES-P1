@@ -81,6 +81,67 @@ To get started with this project, follow these steps:
     - Click on the Del icon placed on the top right corner of the screen.
    ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 01.18.24.png>)
 
+5. **Display all contacts and their status:**
+   - Click on the Contacts tab to view all contacts and their status.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.31.08.png>)
+
+6. **Add a user to contacts:**
+   - Click on the Contacts tab.
+   - Click on the icon to add a new contact.
+   - Enter the username of the contact you want to add.
+   - Click on the Add button to add the contact.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.32.10.png>)
+
+7. **Show user contact details:**
+   - Click on the Contacts tab.
+   - It will display the status and presence message of the contact.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.31.08.png>)
+
+8. **1-to-1 communication with any user/contact:**
+   - Click on the contact you want to chat with.
+   - Enter the message in the input field.
+   - Click on the Send button to send the message.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.34.21.png>)
+
+9. **Participate in group conversations:**
+   - Click on the + icon to:
+       - Create a new group.
+       - Add contacts to the group.
+       - Join the group.
+       - Start a conversation in the group.
+       (To start a conversation in the group, it is necessary to join the group first.)
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.37.40.png>)
+
+10. **Set presence message:**
+    - Click on the Profile tab.
+    - Select the status from the dropdown.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.40.03.png>)
+
+11. **Send/receive notifications:**
+    - Notifications will be displayed when:
+        - A contact sends a message.
+        - A contact changes their status.
+        - A contact requests to add you to their contact list.
+        - A contact accepts your request to add them to your contact list.
+   You can see the notifications in icon bell.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.41.43.png>)
+
+12. **Send/receive files:**
+   - Click on the contact or group chat.
+   - Click on the file input field to select the file.
+   - Click on the Send button to send the file.
+   Files can be sent in 1-to-1 chat or group chat.
+   Files are displayed in the chat window.
+   ![alt text](<imagesReadMe/Captura de pantalla 2024-08-20 a las 20.44.13.png>)
+
+
+
+
+
+
+
+
+
 
 
 
