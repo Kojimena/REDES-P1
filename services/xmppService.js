@@ -93,10 +93,16 @@ class XmppService extends EventEmitter{
         const subscription = item.attrs.subscription;
         switch (subscription) {
             case 'none':
-              this.emit('notificationReceived', jid + ' has removed you from their contacts');
+              this.emit('notificationReceived', 'The subscription between you and ' + jid + ' is none');
+              break;
+            case 'to':
+              this.emit('notificationReceived', 'You have a subscription from ' + jid);
               break;
         }
-
+    } else if (stanza.is('iq') && stanza.attrs.type === 'result' && stanza.attrs.id === 'removeContact_1') {
+        const from = stanza.attrs.from;
+        const to = stanza.attrs.to;
+        this.emit('notificationReceived', 'You have removed ' + from + ' from your roster');
     } else if (stanza.is('presence')&& stanza.attrs.type === 'subscribe') {
             const from = stanza.attrs.from;
             this.emit('invitationReceived', from);
@@ -110,23 +116,23 @@ class XmppService extends EventEmitter{
           switch (show) {
             case 'chat':
               this.emit('contactStatusUpdated', { from, status, show: 'Available for chat' });
-              this.emit('notificationReceived', 'User ' + from + ' is Available for chat');
+              this.emit('notificationReceived', 'User ' + from.split('@')[0] + ' is Available for chat');
               break;
             case 'away':
               this.emit('contactStatusUpdated', { from, status, show: 'Away' });
-              this.emit('notificationReceived', 'User ' + from + ' is away');
+              this.emit('notificationReceived', 'User ' + from.split('@')[0] + ' is away');
               break;
             case 'dnd':
               this.emit('contactStatusUpdated', { from, status, show: 'Do not disturb' });
-              this.emit('notificationReceived', 'User ' + from + ' is busy');
+              this.emit('notificationReceived', 'User ' + from.split('@')[0] + ' is busy');
               break;
             case 'xa':
               this.emit('contactStatusUpdated', { from, status, show: 'Extended away' });
-              this.emit('notificationReceived', 'User ' + from + ' is away for an extended period');
+              this.emit('notificationReceived', 'User ' + from.split('@')[0] + ' is away for an extended period');
               break;
             default:
               this.emit('contactStatusUpdated', { from, status, show: 'Available' });
-              this.emit('notificationReceived', 'User ' + from + ' is online');
+              this.emit('notificationReceived', 'User ' + from.split('@')[0] + ' is online');
               break;
           }
         }
@@ -332,7 +338,6 @@ class XmppService extends EventEmitter{
             });
         }
     }
-    console.log('🐹 Roster handle:', this.roster);
     this.emit('rosterUpdated', Array.from(this.roster));
   }
 

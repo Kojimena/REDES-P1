@@ -20,7 +20,7 @@ const NotificationsPopUp = ({notifications}) => {
         <div className="flex flex-col gap-4 mt-4">
           {   
             (notifications).map((notification, index) => (
-                <div key={index} className="flex flex-col gap-2">
+                <div key={index} className="flex flex-col gap-2 glassmorphism rounded-md">
                     <span className="text-xs text-white">
                         {notification}
                     </span>

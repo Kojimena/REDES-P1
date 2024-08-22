@@ -32,10 +32,7 @@ export const XmppProvider = ({ children }) => {
     useEffect(() => {
         if (xmpp) {
             const handleMessages = (conversations) => {
-                setConversationsUpdate(prev => {
-                    console.log('Conversaciones previas:', prev);
-                    console.log('Nuevas conversaciones:', conversations);
-            
+                setConversationsUpdate(prev => {            
                     const updatedConversations = { ...prev };
             
                     for (const [user, messages] of Object.entries(conversations)) {
@@ -48,7 +45,6 @@ export const XmppProvider = ({ children }) => {
                         updatedConversations[user] = [...updatedConversations[user], ...newMessages].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                     }
             
-                    console.log('Conversaciones actualizadas:', updatedConversations);
                     return updatedConversations;
                 });
             };
@@ -59,9 +55,12 @@ export const XmppProvider = ({ children }) => {
             };
 
             const handleInvitationReceived = (jid) => {
-                if (!invitations.includes(jid)) {
-                    setInvitations(prev => [...prev, jid]);
-                }
+                invitations.forEach((invitation) => {
+                    if (invitation === jid) {
+                        return;
+                    }
+                });
+                setInvitations(prev => [...prev, jid]);
                 const message = `Invitation received from ${jid}, check your invitations.`;
                 if (!notification.includes(message)) {
                     setNotification(prev => [...prev, message]);

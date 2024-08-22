@@ -19,6 +19,7 @@ import ChannelCreate from '@/components/ChannelCreate/ChannelCreate'
 import { FaPeopleRoof } from "react-icons/fa6"
 import { TbHttpDelete } from "react-icons/tb"
 import DelPopUp from '@/components/DelPopUp/DelPopUp'
+import moment from 'moment-timezone'
 
 
 const Chat = () => {
@@ -67,6 +68,10 @@ const Chat = () => {
         }
     };
 
+    const formatGuatemalaTime = (timestamp) => {
+        return moment(timestamp).tz('America/Guatemala').format('YYYY-MM-DD - HH:mm');
+    };
+
     const renderMessages = (contact) => {
         const messages = conversationsUpdate[contact];
          if (selectedContact === contact && !contact.includes('@conference') && messages) {
@@ -75,7 +80,7 @@ const Chat = () => {
                   {
                     messageObj.sender.includes(xmpp.username) ? (
                       <div className='flex justify-end w-full'>
-                        <ChatBubble message={messageObj.message} type='sent' timestamp={messageObj.timestamp.split('T')[0]} />
+                        <ChatBubble message={messageObj.message} type='sent' timestamp={formatGuatemalaTime(messageObj.timestamp)} />
                         <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
                           <span className='text-white text-sm font-semibold uppercase'>{messageObj.sender[0]}</span>
                         </div>
@@ -85,7 +90,7 @@ const Chat = () => {
                         <div className='h-8 w-8 bg-black rounded-full flex justify-center items-center'>
                           <span className='text-white text-sm font-semibold uppercase'>{messageObj.sender[0]}</span>
                         </div>
-                        <ChatBubble message={messageObj.message} type='received' timestamp={messageObj.timestamp.split('T')[0]} />
+                        <ChatBubble message={messageObj.message} type='received' timestamp={formatGuatemalaTime(messageObj.timestamp)} />
                       </div>
                     )
                   }
@@ -267,7 +272,7 @@ const Chat = () => {
                         Invitations
                         <span className='text-xs text-white bg-black rounded-full p-1 mb-4'>
                             {
-                                invitations && invitations.length && grupalInvitations && grupalInvitations.length
+                                invitations && invitations.length
                             }
                         </span>
                         <div className='gap-4 flex justify-center items-center'>
@@ -414,10 +419,10 @@ const Chat = () => {
                         </button>
                         {
                             roster.map(contact => (
-                                <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact} onClick={() => handleSelectContact(contact)}>
+                                <div className='flex items-center justify-between p-2 m-2 bg-gray-200 rounded-xl cursor-pointer' key={contact}>
                                     <div className='flex items-center'>
                                         <div className={`h-8 w-8 rounded-full ${contactStatus[contact] && contactStatus[contact].show === 'Available' ? 'bg-green-500' : contactStatus[contact] && contactStatus[contact].show === 'Away' ? 'bg-yellow-500' : contactStatus[contact] && contactStatus[contact].show === 'Do not disturb' ? 'bg-red-500' : contactStatus[contact] && contactStatus[contact].show === 'Extended away' ? 'bg-yellow-500' : contactStatus[contact] && contactStatus[contact].show === 'Available for chat' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                                        <div className='ml-2 flex flex-col'>
+                                        <div className='ml-2 flex flex-col' onClick={() => handleSelectContact(contact)}>
                                             <span className='font-medium text-black'>{contact}</span>
                                             <span>
                                                  {contactStatus[contact] ? `status: (${contactStatus[contact].status})` : 'status: ()'}

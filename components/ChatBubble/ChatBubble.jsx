@@ -15,9 +15,9 @@ const ChatBubble = ({ message, type, timestamp }) => {
 
     return (
         <div className={`chat ${type === 'sent' ? 'chat-end w-80' : 'chat-start w-80'}`}>
-            <div className="chat-bubble bg-white w-80">
+            <div className={`chat-bubble w-80 ${type === 'sent' ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
                 <div className="chat-content flex flex-col">
-                    {isImage(message) && <img src={message} alt="content" className="w-80 h-96 object-contain" />}
+                    {isImage(message) && <img src={message} alt="content" className="object-contain" />}
                     {isLink(message) && 
                         <div className='flex flex-col h-96'>
                             <iframe
@@ -30,7 +30,7 @@ const ChatBubble = ({ message, type, timestamp }) => {
                         </div>
                     }
                     {!isImage(message) && !isLink(message) && 
-                        <span className="text-gray-800">{message}</span>
+                        <span className={`${type === 'sent' ? 'text-white' : 'text-black'}`}>{message}</span>
                     }
                     {timestamp && <span className="text-xs text-gray-500">{timestamp}</span>}
                 </div>
